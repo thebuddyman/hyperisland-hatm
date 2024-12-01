@@ -13,7 +13,7 @@ export const Overview = () => {
       transition={{ delay: 0.5 }}
     >
       <div className="rounded-xl p-6 flex flex-col gap-8 leading-relaxed text-center max-w-xl">
-        <Image src="images/mascot.png" width={100} height={100} alt="Mascot"/>
+        <Image src="images/mascot.png" width={100} height={100} alt="Mascot - Sammie"/>
         <p>
           Hello there!
         </p>
