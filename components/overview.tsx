@@ -12,8 +12,8 @@ export const Overview = () => {
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ delay: 0.5 }}
     >
-      <div className="rounded-xl p-6 flex flex-col gap-8 leading-relaxed text-center max-w-xl">
-        <Image src="images/mascot.png" width={100} height={100} alt="Mascot - Sammie"/>
+      <div className="rounded-full p-6 flex flex-col gap-8 leading-relaxed text-center max-w-xl">
+        <Image className="rounded-full" src="images/mascot.png" width={100} height={100} alt="Mascot - Sammie"/>
         <p>
           Hello there!
         </p>

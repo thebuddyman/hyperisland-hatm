@@ -14,6 +14,8 @@ import { Markdown } from './markdown';
 import { MessageActions } from './message-actions';
 import { PreviewAttachment } from './preview-attachment';
 import { Weather } from './weather';
+import Image from 'next/image';
+
 
 export const PreviewMessage = ({
   chatId,
@@ -44,7 +46,7 @@ export const PreviewMessage = ({
       >
         {message.role === 'assistant' && (
           <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-            <SparklesIcon size={14} />
+            <Image className="rounded-full" src="images/mascot.png" width="auto" height="auto" alt="Mascot - Sammie"/>
           </div>
         )}
 
@@ -171,7 +173,7 @@ export const ThinkingMessage = () => {
         )}
       >
         <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-          <SparklesIcon size={14} />
+        <Image className="rounded-full" src="images/mascot.png" width="auto" height="auto" alt="Mascot - Sammie"/>
         </div>
 
         <div className="flex flex-col gap-2 w-full">
