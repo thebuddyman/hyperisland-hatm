@@ -1,5 +1,5 @@
 <p align="center">
-  Hyper Island x Samhall Project
+  Hyper Island x Samhall Project 2024
 </p>
 
 <p align="center">
