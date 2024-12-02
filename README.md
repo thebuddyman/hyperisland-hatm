@@ -1,5 +1,5 @@
 <p align="center">
-  Hyper Island x Samhall Project 2024 Updates
+  Hyper Island x Samhall Project 2024 Updates - Testing
 </p>
 
 <p align="center">
