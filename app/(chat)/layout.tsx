@@ -13,7 +13,8 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   const [session, cookieStore] = await Promise.all([auth(), cookies()]);
-  const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
+  // Change this line to make sidebar collapsed by default
+  const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true' || true;  // Added '|| true' to ensure default collapsed state
 
   return (
     <SidebarProvider defaultOpen={!isCollapsed}>

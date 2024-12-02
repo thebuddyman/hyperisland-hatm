@@ -1,9 +1,11 @@
 'use client';
 
+import { handleUserNameSubmission } from '@/app/(chat)/actions';
+
 import type { Attachment, Message } from 'ai';
 import { useChat } from 'ai/react';
 import { AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useWindowSize } from 'usehooks-ts';
 
@@ -27,6 +29,15 @@ export function Chat({
   initialMessages: Array<Message>;
   selectedModelId: string;
 }) {
+
+  useEffect(() => {
+    // Check and clear first-time flag
+    const isFirstTime = localStorage.getItem('sammie-first-time');
+    if (isFirstTime === 'true') {
+      localStorage.removeItem('sammie-first-time');
+    }
+  }, []);
+
   const { mutate } = useSWRConfig();
 
   const {
@@ -42,7 +53,15 @@ export function Chat({
   } = useChat({
     body: { id, modelId: selectedModelId },
     initialMessages,
-    onFinish: () => {
+    onFinish: async (message) => {
+      // Check if this is the first user message and might be their name
+      if (message.role === 'user' && messages.length === 1) {
+        const possibleName = message.content.trim();
+        // Simple check if input might be a name (you can make this more sophisticated)
+        if (possibleName.length < 30 && !possibleName.includes(' ')) {
+          await handleUserNameSubmission(possibleName, id);
+        }
+      }
       mutate('/api/history');
     },
   });

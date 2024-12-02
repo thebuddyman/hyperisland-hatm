@@ -24,16 +24,25 @@ export default function Page() {
   );
 
   useEffect(() => {
-    if (state.status === 'user_exists') {
+    if (state.status === 'success') {
+
+       // Set the first-time user flag in localStorage
+       localStorage.setItem('sammie-first-time', 'true');
+
+      toast.success('Account created successfully');
+      setIsSuccessful(true);
+      // Redirect to the welcome chat if chatId is available
+      if ('chatId' in state && state.chatId) {
+        router.push(`/chat/${state.chatId}`);
+      } else {
+        router.push('/');
+      }
+    } else if (state.status === 'user_exists') {
       toast.error('Account already exists');
     } else if (state.status === 'failed') {
       toast.error('Failed to create account');
     } else if (state.status === 'invalid_data') {
       toast.error('Failed validating your submission!');
-    } else if (state.status === 'success') {
-      toast.success('Account created successfully');
-      setIsSuccessful(true);
-      router.refresh();
     }
   }, [state, router]);
 
