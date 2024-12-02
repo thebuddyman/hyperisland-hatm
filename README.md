@@ -1,5 +1,5 @@
 <p align="center">
-  Hyper Island x Samhall Project 2024 Updates - Testing dah pindah ownership lagi back to thomas tjaja
+  Hyper Island x Samhall Project 2024
 </p>
 
 <p align="center">
