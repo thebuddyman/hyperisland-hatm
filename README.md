@@ -1,5 +1,5 @@
 <p align="center">
-  Hyper Island x Samhall Project 2024 Updates - Testing dah pindah ownership
+  Hyper Island x Samhall Project 2024 Updates - Testing dah pindah ownership lagi
 </p>
 
 <p align="center">
