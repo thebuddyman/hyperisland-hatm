@@ -1,5 +1,5 @@
 <p align="center">
-  Hyper Island x Samhall Project 2024
+  Hyper Island x Samhall Project 2024 - Commit test
 </p>
 
 <p align="center">
