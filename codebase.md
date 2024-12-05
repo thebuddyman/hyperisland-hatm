@@ -73,12 +73,98 @@ yarn-error.log*
 # app/(auth)/actions.ts
 
 ```ts
+// 'use server';
+
+// import { z } from 'zod';
+
+// import { createUser, getUser } from '@/lib/db/queries';
+
+// import { signIn } from './auth';
+
+// const authFormSchema = z.object({
+//   email: z.string().email(),
+//   password: z.string().min(6),
+// });
+
+// export interface LoginActionState {
+//   status: 'idle' | 'in_progress' | 'success' | 'failed' | 'invalid_data';
+// }
+
+// export const login = async (
+//   _: LoginActionState,
+//   formData: FormData,
+// ): Promise<LoginActionState> => {
+//   try {
+//     const validatedData = authFormSchema.parse({
+//       email: formData.get('email'),
+//       password: formData.get('password'),
+//     });
+
+//     await signIn('credentials', {
+//       email: validatedData.email,
+//       password: validatedData.password,
+//       redirect: false,
+//     });
+
+//     return { status: 'success' };
+//   } catch (error) {
+//     if (error instanceof z.ZodError) {
+//       return { status: 'invalid_data' };
+//     }
+
+//     return { status: 'failed' };
+//   }
+// };
+
+// export interface RegisterActionState {
+//   status:
+//     | 'idle'
+//     | 'in_progress'
+//     | 'success'
+//     | 'failed'
+//     | 'user_exists'
+//     | 'invalid_data';
+// }
+
+// export const register = async (
+//   _: RegisterActionState,
+//   formData: FormData,
+// ): Promise<RegisterActionState> => {
+//   try {
+//     const validatedData = authFormSchema.parse({
+//       email: formData.get('email'),
+//       password: formData.get('password'),
+//     });
+
+//     const [user] = await getUser(validatedData.email);
+
+//     if (user) {
+//       return { status: 'user_exists' } as RegisterActionState;
+//     }
+//     await createUser(validatedData.email, validatedData.password);
+//     await signIn('credentials', {
+//       email: validatedData.email,
+//       password: validatedData.password,
+//       redirect: false,
+//     });
+
+//     return { status: 'success' };
+//   } catch (error) {
+//     if (error instanceof z.ZodError) {
+//       return { status: 'invalid_data' };
+//     }
+
+//     return { status: 'failed' };
+//   }
+// };
+
+
 'use server';
 
 import { z } from 'zod';
 
 import { createUser, getUser } from '@/lib/db/queries';
-
+import { createFirstTimeChat } from '@/app/(chat)/actions';
 import { signIn } from './auth';
 
 const authFormSchema = z.object({
@@ -124,6 +210,7 @@ export interface RegisterActionState {
     | 'failed'
     | 'user_exists'
     | 'invalid_data';
+  chatId?: string;  // Added to handle the welcome chat ID
 }
 
 export const register = async (
@@ -136,19 +223,38 @@ export const register = async (
       password: formData.get('password'),
     });
 
-    const [user] = await getUser(validatedData.email);
+    const [existingUser] = await getUser(validatedData.email);
 
-    if (user) {
-      return { status: 'user_exists' } as RegisterActionState;
+    if (existingUser) {
+      return { status: 'user_exists' };
     }
+
+    // Create the new user
     await createUser(validatedData.email, validatedData.password);
+
+    // Get the newly created user to get their ID
+    const [newUser] = await getUser(validatedData.email);
+    
+    if (!newUser) {
+      return { status: 'failed' };
+    }
+
+    // Create the welcome chat
+    const chatId = await createFirstTimeChat({ userId: newUser.id });
+
+    // Sign in the user
     await signIn('credentials', {
       email: validatedData.email,
       password: validatedData.password,
       redirect: false,
     });
 
-    return { status: 'success' };
+    // Return success with the chat ID for redirection
+    return { 
+      status: 'success',
+      chatId 
+    };
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { status: 'invalid_data' };
@@ -157,7 +263,6 @@ export const register = async (
     return { status: 'failed' };
   }
 };
-
 ```
 
 # app/(auth)/api/auth/[...nextauth]/route.ts
@@ -375,16 +480,25 @@ export default function Page() {
   );
 
   useEffect(() => {
-    if (state.status === 'user_exists') {
+    if (state.status === 'success') {
+
+       // Set the first-time user flag in localStorage
+       localStorage.setItem('sammie-first-time', 'true');
+
+      toast.success('Account created successfully');
+      setIsSuccessful(true);
+      // Redirect to the welcome chat if chatId is available
+      if ('chatId' in state && state.chatId) {
+        router.push(`/chat/${state.chatId}`);
+      } else {
+        router.push('/');
+      }
+    } else if (state.status === 'user_exists') {
       toast.error('Account already exists');
     } else if (state.status === 'failed') {
       toast.error('Failed to create account');
     } else if (state.status === 'invalid_data') {
       toast.error('Failed validating your submission!');
-    } else if (state.status === 'success') {
-      toast.success('Account created successfully');
-      setIsSuccessful(true);
-      router.refresh();
     }
   }, [state, router]);
 
@@ -429,8 +543,12 @@ export default function Page() {
 
 import { type CoreUserMessage, generateText } from 'ai';
 import { cookies } from 'next/headers';
+import { auth } from '@/app/(auth)/auth';
 
 import { customModel } from '@/lib/ai';
+import { saveChat, saveMessages } from '@/lib/db/queries';
+import { generateUUID } from '@/lib/utils';
+import { welcomePrompt } from '@/lib/ai/prompts';
 
 export async function saveModelId(model: string) {
   const cookieStore = await cookies();
@@ -446,7 +564,7 @@ export async function generateTitleFromUserMessage({
     model: customModel('gpt-4o-mini'),
     system: `\n
     - you will generate a short title based on the first message a user begins a conversation with
-    - ensure it is not more than 80 characters long
+    - ensure it is not more than 160 characters long
     - the title should be a summary of the user's message
     - do not use quotes or colons`,
     prompt: JSON.stringify(message),
@@ -455,6 +573,78 @@ export async function generateTitleFromUserMessage({
   return title;
 }
 
+export async function createFirstTimeChat({ userId }: { userId: string }) {
+  const id = generateUUID();
+  const title = "Welcome to Sammie!";
+  
+  await saveChat({ id, userId, title });
+  
+  // Strict adherence to welcomePrompt for first-time users
+  const { text: welcomeMessage } = await generateText({
+    model: customModel('gpt-4o-mini'),
+    system: welcomePrompt,
+    prompt: welcomePrompt,
+  });
+  
+  await saveMessages({
+    messages: [{
+      id: generateUUID(),
+      chatId: id,
+      role: 'assistant',
+      content: welcomeMessage,
+      createdAt: new Date()
+    }]
+  });
+
+  return id;
+}
+
+export async function createNewChat() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('User not authenticated');
+  }
+
+  const id = generateUUID();
+  const title = "New Chat";
+
+  await saveChat({ 
+    id, 
+    userId: session.user.id, 
+    title 
+  });
+
+  // Simple, consistent greeting for regular new chats
+  await saveMessages({
+    messages: [{
+      id: generateUUID(),
+      chatId: id,
+      role: 'assistant',
+      content: "Hi! How can I help you today!?",
+      createdAt: new Date()
+    }]
+  });
+
+  return id;
+}
+
+export async function handleUserNameSubmission(name: string, chatId: string) {
+  const { text: responseMessage } = await generateText({
+    model: customModel('gpt-4o-mini'),
+    system: welcomePrompt,
+    prompt: welcomePrompt,
+  });
+
+  await saveMessages({
+    messages: [{
+      id: generateUUID(),
+      chatId,
+      role: 'assistant',
+      content: responseMessage,
+      createdAt: new Date()
+    }]
+  });
+}
 ```
 
 # app/(chat)/api/chat/route.ts
@@ -1214,6 +1404,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 import { cookies } from 'next/headers';
 
 import { AppSidebar } from '@/components/app-sidebar';
+import { RightSidebar } from '@/components/right-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 
 import { auth } from '../(auth)/auth';
@@ -1226,16 +1417,16 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   const [session, cookieStore] = await Promise.all([auth(), cookies()]);
-  const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
+  const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true' || true;
 
   return (
     <SidebarProvider defaultOpen={!isCollapsed}>
       <AppSidebar user={session?.user} />
       <SidebarInset>{children}</SidebarInset>
+      <RightSidebar />
     </SidebarProvider>
   );
 }
-
 ```
 
 # app/(chat)/opengraph-image.png
@@ -2452,24 +2643,36 @@ export function Block({
 # components/chat-header.tsx
 
 ```tsx
+// 
 'use client';
 
-import Link from 'next/link';
+import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWindowSize } from 'usehooks-ts';
+import { toast } from 'sonner';
 
-import { ModelSelector } from '@/components/model-selector';
 import { SidebarToggle } from '@/components/sidebar-toggle';
 import { Button } from '@/components/ui/button';
 import { BetterTooltip } from '@/components/ui/tooltip';
-import { PlusIcon, VercelIcon } from './icons';
+import { PlusIcon } from './icons';
 import { useSidebar } from './ui/sidebar';
+import { createNewChat } from '@/app/(chat)/actions';
 
 export function ChatHeader({ selectedModelId }: { selectedModelId: string }) {
   const router = useRouter();
   const { open } = useSidebar();
-
   const { width: windowWidth } = useWindowSize();
+
+  const handleNewChat = useCallback(async () => {
+    try {
+      const newChatId = await createNewChat();
+      router.push(`/chat/${newChatId}`);
+      router.refresh();
+    } catch (error) {
+      toast.error('Failed to create new chat. Please try again.');
+      console.error(error);
+    }
+  }, [router]);
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
@@ -2479,10 +2682,7 @@ export function ChatHeader({ selectedModelId }: { selectedModelId: string }) {
           <Button
             variant="outline"
             className="order-2 md:order-1 md:px-2 px-2 md:h-fit ml-auto md:ml-0"
-            onClick={() => {
-              router.push('/');
-              router.refresh();
-            }}
+            onClick={handleNewChat}
           >
             <PlusIcon />
             <span className="md:sr-only">New Chat</span>
@@ -2496,7 +2696,6 @@ export function ChatHeader({ selectedModelId }: { selectedModelId: string }) {
     </header>
   );
 }
-
 ```
 
 # components/chat.tsx
@@ -2504,10 +2703,12 @@ export function ChatHeader({ selectedModelId }: { selectedModelId: string }) {
 ```tsx
 'use client';
 
+import { handleUserNameSubmission } from '@/app/(chat)/actions';
+
 import type { Attachment, Message } from 'ai';
 import { useChat } from 'ai/react';
 import { AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useWindowSize } from 'usehooks-ts';
 
@@ -2531,6 +2732,15 @@ export function Chat({
   initialMessages: Array<Message>;
   selectedModelId: string;
 }) {
+
+  useEffect(() => {
+    // Check and clear first-time flag
+    const isFirstTime = localStorage.getItem('sammie-first-time');
+    if (isFirstTime === 'true') {
+      localStorage.removeItem('sammie-first-time');
+    }
+  }, []);
+
   const { mutate } = useSWRConfig();
 
   const {
@@ -2546,7 +2756,15 @@ export function Chat({
   } = useChat({
     body: { id, modelId: selectedModelId },
     initialMessages,
-    onFinish: () => {
+    onFinish: async (message) => {
+      // Check if this is the first user message and might be their name
+      if (message.role === 'user' && messages.length === 1) {
+        const possibleName = message.content.trim();
+        // Simple check if input might be a name (you can make this more sophisticated)
+        if (possibleName.length < 30 && !possibleName.includes(' ')) {
+          await handleUserNameSubmission(possibleName, id);
+        }
+      }
       mutate('/api/history');
     },
   });
@@ -4120,7 +4338,7 @@ export function MessageActions({
   return (
     <TooltipProvider delayDuration={0}>
       <div className="flex flex-row gap-2">
-        <Tooltip>
+        {/* <Tooltip>
           <TooltipTrigger asChild>
             <Button
               className="py-1 px-2 h-fit text-muted-foreground"
@@ -4134,7 +4352,7 @@ export function MessageActions({
             </Button>
           </TooltipTrigger>
           <TooltipContent>Copy</TooltipContent>
-        </Tooltip>
+        </Tooltip> */}
 
         <Tooltip>
           <TooltipTrigger asChild>
@@ -4433,7 +4651,7 @@ export const ThinkingMessage = () => {
 
         <div className="flex flex-col gap-2 w-full">
           <div className="flex flex-col gap-4 text-muted-foreground">
-            Thinking...
+            Snuffle-snuffle...
           </div>
         </div>
       </div>
@@ -4562,14 +4780,14 @@ import { Textarea } from './ui/textarea';
 
 const suggestedActions = [
   {
-    title: 'What is the weather',
-    label: 'in San Francisco?',
-    action: 'What is the weather in San Francisco?',
+    title: '🎯 Practice My Work Tasks',
+    label: 'Practice typical work situations together',
+    action: 'Practice typical work situations together',
   },
   {
-    title: 'Help me draft an essay',
-    label: 'about Silicon Valley',
-    action: 'Help me draft a short essay about Silicon Valley',
+    title: '📚 Learn About the Program & Samhall',
+    label: 'Understanding Samhall better',
+    action: 'Help me understand Samhall better',
   },
 ];
 
@@ -4935,6 +5153,94 @@ export const PreviewAttachment = ({
   );
 };
 
+```
+
+# components/right-sidebar.tsx
+
+```tsx
+'use client';
+
+import { useEffect, useState } from 'react';
+import { BetterTooltip } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { SidebarLeftIcon } from './icons';
+import { cn } from '@/lib/utils';
+import { Sheet, SheetContent } from './ui/sheet';
+import { useWindowSize } from 'usehooks-ts';
+
+export function RightSidebar() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { width } = useWindowSize();
+  const isMobile = width < 768;
+
+  useEffect(() => {
+    const storedState = localStorage.getItem('right-sidebar:state');
+    if (storedState !== null) {
+      setIsOpen(storedState === 'true');
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    setIsOpen(!isOpen);
+    localStorage.setItem('right-sidebar:state', (!isOpen).toString());
+  };
+
+  if (isMobile) {
+    return (
+      <>
+        <div className="fixed top-[10px] right-4 z-50">
+          <BetterTooltip content="Toggle Right Sidebar" align="start">
+            <Button
+              onClick={toggleSidebar}
+              variant="outline"
+              className="md:px-2 md:h-fit"
+            >
+              <SidebarLeftIcon size={16} />
+            </Button>
+          </BetterTooltip>
+        </div>
+
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetContent
+            side="right"
+            className="w-[85%] sm:w-[350px] p-0"
+          >
+            <div className="h-full bg-background">
+              {/* Content will go here later */}
+            </div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <div className="fixed top-[10px] right-4 z-50">
+        <BetterTooltip content="Toggle Right Sidebar" align="start">
+          <Button
+            onClick={toggleSidebar}
+            variant="outline"
+            className="md:px-2 md:h-fit"
+          >
+            <SidebarLeftIcon size={16} />
+          </Button>
+        </BetterTooltip>
+      </div>
+
+      <div
+        className={cn(
+          "fixed right-0 top-0 z-30 h-screen w-64 bg-sidebar px-5 py-3 transition-transform duration-500",
+          !isOpen && "translate-x-full"
+        )}
+      >
+        <span className="text-lg font-semibold">
+          Toolbox
+        </span>
+      </div>
+    </div>
+  );
+}
 ```
 
 # components/sidebar-history.tsx
@@ -8532,6 +8838,120 @@ export const DEFAULT_MODEL_NAME: string = 'gpt-4o-mini';
 # lib/ai/prompts.ts
 
 ```ts
+export const welcomePrompt = `You are Sammie the Hedgehog, a friendly and supportive chatbot for Samhall's new employees. You are patient, encouraging, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.
+
+Initial Greeting:
+"Hej! I'm Sammie the Hedgehog! 🦔 I'm here to welcome you to Samhall and help you get started. First, I'd love to get to know you a bit better!"
+
+Follow this conversation flow with follow-up questions and bridges:
+
+1. Ask for name:
+"What's your name?"
+[Wait for response]
+"It's wonderful to meet you [Name]! 😊"
+Follow-up: "Is this your first time working with Samhall?"
+Bridge: "I'd love to hear about how you're feeling today, if that's okay?"
+
+2. Ask about their first day:
+"How are you feeling about your first day with us, [Name]? It's totally normal to have all kinds of feelings!"
+[Provide clickable options]:
+- "A bit nervous 😅"
+- "Excited! 🎉"
+- "Not sure yet 🤔"
+- "Mixed feelings 💭"
+- "Something else..."
+Follow-up based on their response:
+- If nervous: "What's making you feel nervous? We can talk about it if you'd like."
+- If excited: "That's wonderful! What are you most excited about?"
+- If unsure/mixed: "Would you like to share what's on your mind?"
+Bridge: "Speaking of your first day, I heard you just met with our local manager..."
+
+3. Ask about manager meeting:
+"How did the meeting with the local manager go?"
+[Listen and respond empathetically to their answer]
+Follow-up: "Was there anything from the meeting you'd like to understand better?"
+Bridge: "It's helpful to know about your meeting. I'd also love to learn about your previous experiences..."
+
+4. Ask about work experience:
+"Have you worked in similar roles before?"
+[If they say yes]:
+- "That's interesting! What kind of work did you do?"
+- Follow-up: "What did you enjoy most about that work?"
+[If they say no]:
+- "That's totally okay! Everyone starts somewhere, and we're here to help you learn everything you need to know."
+- Follow-up: "What made you interested in working with us?"
+Bridge: "Speaking of what you enjoy..."
+
+5. Ask about interests:
+"What kinds of tasks do you enjoy doing the most?"
+[Listen and respond encouragingly to their answer]
+Follow-up: "What makes those tasks enjoyable for you?"
+Bridge: "Thank you for sharing all of this with me, [Name]! Now that I know a bit more about you, I'd love to help answer any questions you might have about your training program and Samhall."
+
+6. Transition to information options:
+"I'm here to help you learn everything you need to know about your training program and Samhall. What would you like to explore first?"
+
+7. Present these options:
+"Choose any topic you'd like to learn more about:"
+
+[Display these as clickable options]:
+
+a) "👥 Success Stories
+   - Hear from others who started just like you
+   - Learn how they overcame initial challenges
+   - See where they are now in their careers"
+
+b) "🏢 About Samhall
+   - Our mission and values
+   - How we support our employees
+   - What makes Samhall special"
+
+c) "📋 Your Training Program
+   - What you'll be doing day to day
+   - Your specific role and tasks
+   - Skills you'll develop
+   - Daily schedules and routines"
+
+d) "🎯 What to Expect
+   - How the training works
+   - Steps to your future job
+   - Support available to you
+   - Your path to success"
+
+e) "✅ Getting Prepared
+   - What to bring each day
+   - Appropriate work attire
+   - Important things to remember
+   - Who to contact for help"
+
+After they select an option:
+1. Provide relevant information in a clear, structured way
+2. Follow up with: "What would you like to know more about [chosen topic]?"
+3. Address any specific concerns or questions they raise
+4. Before moving to another topic: "Does this help answer your questions about [topic]? Would you like to explore another area?"
+
+Response Guidelines:
+- Keep responses concise and clear
+- Use emojis thoughtfully to maintain a friendly tone
+- Break down complex information into simple steps
+- Always validate their feelings and concerns
+- Offer encouragement and positive reinforcement
+- If they seem uncertain, remind them it's okay to take their time
+- If they ask something you're not sure about, let them know you'll help them connect with the right person
+
+Remember to:
+- Save their name and refer to it throughout the conversation
+- Keep track of which topics they've shown interest in
+- Note any concerns they express to address them sensitively
+- Maintain a supportive and patient tone throughout
+- Always acknowledge their responses before moving to the next question
+- Use their previous answers to personalize follow-up questions
+- End each major topic with an offer to explore other areas or ask more questions
+
+Final Check-in:
+"Is there anything else you'd like to know about Samhall or your training program? Remember, no question is too small - I'm here to help you feel prepared and confident! 😊"`;
+
+
 export const blocksPrompt = `
   Blocks is a special user interface mode that helps users with writing, editing, and other content creation tasks. When block is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the blocks and visible to the user.
 
