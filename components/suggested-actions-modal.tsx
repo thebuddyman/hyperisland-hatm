@@ -120,7 +120,7 @@ export function SuggestedActionsWithModal({
                         variant="outline"
                         className="w-full mt-2"
                     >
-                        See More Options
+                        See more options
                     </Button>
                 </SheetTrigger>
                 <SheetContent
@@ -128,7 +128,7 @@ export function SuggestedActionsWithModal({
                     className="h-[100dvh] p-0 flex flex-col" // Use dvh for better mobile support
                 >
                     <SheetHeader className="px-4 py-3 border-b">
-                        <SheetTitle className="text-left">More Ways I Can Help</SheetTitle>
+                        <SheetTitle className="text-left">More ways Sammie can help</SheetTitle>
                     </SheetHeader>
                     <div className="flex-1 overflow-y-auto">
                         <div className="grid sm:grid-cols-2 gap-2 p-4">

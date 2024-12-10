@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { BetterTooltip } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { SidebarLeftIcon } from './icons';
+import { RouteIcon } from './icons';
 import { cn, generateUUID } from '@/lib/utils';
 import { Sheet, SheetContent } from './ui/sheet';
 import { useRouter } from 'next/navigation';
@@ -109,8 +109,8 @@ export function RightSidebar() {
 
   const sidebarContent = (
     <div className="space-y-4 h-full">
-      <span className="text-lg font-semibold">Toolbox</span>
-      {toolboxActions.map((action, index) => (
+      <span className="text-lg font-semibold">Notifications</span>
+      {/* {toolboxActions.map((action, index) => (
         <motion.div
           key={index}
           initial={{ opacity: 0, y: 20 }}
@@ -148,7 +148,7 @@ export function RightSidebar() {
             <span className="text-muted-foreground">{action.label}</span>
           </Button>
         </motion.div>
-      ))}
+      ))} */}
     </div>
   );
 
@@ -157,9 +157,9 @@ export function RightSidebar() {
   return isMobile ? (
     <>
       <div className="top-[10px] right-4 z-50">
-        <BetterTooltip content="Toggle Right Sidebar" align="start">
+        <BetterTooltip content="Toggle Notifications" align="start">
           <Button onClick={toggleSidebar} variant="outline" className="md:px-2 md:h-fit">
-            <SidebarLeftIcon size={16} />
+            <RouteIcon size={24} />
           </Button>
         </BetterTooltip>
       </div>
@@ -173,16 +173,16 @@ export function RightSidebar() {
   ) : (
     <>
       <div className="mt-2 mr-2">
-        <BetterTooltip content="Toggle Right Sidebar" align="start">
+        <BetterTooltip content="Toggle Notifications" align="start">
           <Button onClick={toggleSidebar} variant="outline" className="md:px-2 md:h-fit">
-            <SidebarLeftIcon size={16} />
+            <RouteIcon size={24} />
           </Button>
         </BetterTooltip>
       </div>
-      <div className={cn('relative h-svh w-[384px] transition-[width] duration-200 ease-linear', !isOpen && 'w-0')} />
+      <div className={cn('relative h-svh w-[256px] transition-[width] duration-200 ease-linear', !isOpen && 'w-0')} />
       <div
         className={cn(
-          'fixed right-0 top-0 z-30 h-svh w-96 bg-sidebar px-5 py-3 transition-transform duration-200 ease-linear border-l',
+          'fixed right-0 top-0 z-30 h-svh w-64 bg-sidebar px-5 py-3 transition-transform duration-200 ease-linear',
           !isOpen && 'translate-x-full',
         )}
       >
