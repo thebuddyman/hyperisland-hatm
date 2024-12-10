@@ -1405,6 +1405,7 @@ import { cookies } from 'next/headers';
 
 import { AppSidebar } from '@/components/app-sidebar';
 import { RightSidebar } from '@/components/right-sidebar';
+// import { Sidebar } from '@/components/multimodal-input';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 
 import { auth } from '../(auth)/auth';
@@ -1424,6 +1425,7 @@ export default async function Layout({
       <AppSidebar user={session?.user} />
       <SidebarInset>{children}</SidebarInset>
       <RightSidebar />
+      {/* <Sidebar/> */}
     </SidebarProvider>
   );
 }
@@ -1636,8 +1638,8 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Next.js Chatbot Template',
-  description: 'Next.js chatbot template using the AI SDK.',
+  title: 'Sammie – Samhall Buddy',
+  description: 'Your buddy at Samhall',
 };
 
 export const viewport = {
@@ -2677,7 +2679,7 @@ export function ChatHeader({ selectedModelId }: { selectedModelId: string }) {
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
       <SidebarToggle />
-      {(!open || windowWidth < 768) && (
+      {/* {(!open || windowWidth < 768) && (
         <BetterTooltip content="New Chat">
           <Button
             variant="outline"
@@ -2688,7 +2690,7 @@ export function ChatHeader({ selectedModelId }: { selectedModelId: string }) {
             <span className="md:sr-only">New Chat</span>
           </Button>
         </BetterTooltip>
-      )}
+      )} */}
       {/* <ModelSelector
         selectedModelId={selectedModelId}
         className="order-1 md:order-2"
@@ -4780,15 +4782,25 @@ import { Textarea } from './ui/textarea';
 
 const suggestedActions = [
   {
-    title: '🎯 Practice My Work Tasks',
-    label: 'Practice typical work situations together',
-    action: 'Practice typical work situations together',
+    title: '🎯 Practice Work Scenarios',
+    label: 'Let\'s practice common work situations together',
+    action: 'I\'d like to practice some common work scenarios I might encounter at Samhall',
   },
   {
-    title: '📚 Learn About the Program & Samhall',
-    label: 'Understanding Samhall better',
-    action: 'Help me understand Samhall better',
+    title: '🏢 About Samhall',
+    label: 'Learn about Samhall\'s mission and values',
+    action: 'Can you tell me about Samhall\'s mission, values, and what makes it special?',
   },
+  {
+    title: '📋 My Training Program',
+    label: 'Understand your role and daily routines',
+    action: 'Can you explain my training program, what I\'ll be doing day-to-day, and how I\'ll develop my skills?',
+  },
+  {
+    title: '🤝 Support & Resources',
+    label: 'Learn about available help and support',
+    action: 'What kind of support and resources are available to me as a Samhall employee?',
+  }
 ];
 
 export function MultimodalInput({
@@ -5094,10 +5106,19 @@ export const Overview = () => {
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ delay: 0.5 }}
     >
-      <div className="rounded-full p-6 flex flex-col gap-8 leading-relaxed text-center max-w-xl">
-        <Image className="rounded-full" src="/images/mascot.png" width={100} height={100} alt="Mascot - Sammie"/>
-        <p>
-          Hello there!
+      <div className="rounded-full p-6 flex flex-col items-center justify-center gap-8 leading-relaxed text-center max-w-xl mx-auto">
+        <div className="w-[120px] md:w-[120px] aspect-square flex items-center justify-center">
+          <Image
+            className="rounded-full w-full h-full object-cover"
+            src="/images/mascot.png"
+            width={120}
+            height={120}
+            alt="Mascot - Sammie"
+            priority
+          />
+        </div>
+        <p className="text-lg md:text-xl font-medium">
+          Hello there! Sammie is here. <br/>How can I help you today?
         </p>
       </div>
     </motion.div>
@@ -5164,81 +5185,170 @@ import { useEffect, useState } from 'react';
 import { BetterTooltip } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { SidebarLeftIcon } from './icons';
-import { cn } from '@/lib/utils';
+import { cn, generateUUID } from '@/lib/utils';
 import { Sheet, SheetContent } from './ui/sheet';
-import { useWindowSize } from 'usehooks-ts';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { createNewChat } from '@/app/(chat)/actions';
 
 export function RightSidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { width } = useWindowSize();
-  const isMobile = width < 768;
+  const [isMounted, setIsMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
 
+  // Initialize states and event listeners
   useEffect(() => {
+    setIsMounted(true);
+
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
     const storedState = localStorage.getItem('right-sidebar:state');
-    if (storedState !== null) {
-      setIsOpen(storedState === 'true');
-    }
+    setIsOpen(storedState === 'true');
+
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Handle toggle for sidebar
   const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-    localStorage.setItem('right-sidebar:state', (!isOpen).toString());
+    setIsOpen((prev) => {
+      const newState = !prev;
+      localStorage.setItem('right-sidebar:state', newState.toString());
+      return newState;
+    });
   };
 
-  if (isMobile) {
-    return (
-      <>
-        <div className="fixed top-[10px] right-4 z-50">
-          <BetterTooltip content="Toggle Right Sidebar" align="start">
-            <Button
-              onClick={toggleSidebar}
-              variant="outline"
-              className="md:px-2 md:h-fit"
-            >
-              <SidebarLeftIcon size={16} />
-            </Button>
-          </BetterTooltip>
-        </div>
+  // Append message and navigate to chat
+  const append = async (message: { role: string; content: string }) => {
+    try {
+      const chatId = await createNewChat();
 
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetContent
-            side="right"
-            className="w-[85%] sm:w-[350px] p-0"
+      // Update the URL without navigation
+      window.history.replaceState({}, '', `/chat/${chatId}`);
+
+      // Send message
+      await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [
+            {
+              id: generateUUID(),
+              role: message.role,
+              content: message.content,
+            },
+          ],
+          modelId: 'gpt-4o',
+        }),
+      });
+
+      // Close sidebar if on mobile
+      if (isMobile) setIsOpen(false);
+
+      // Navigate to chat page
+      router.replace(`/chat/${chatId}`);
+    } catch (error) {
+      console.error('Error appending message:', error);
+      // Add toast notification for user feedback if needed
+    }
+  };
+
+  const toolboxActions = [
+    {
+      icon: '🎭',
+      title: 'Role Play',
+      label: 'Practice typical work situations together',
+      action: 'I want to practice about my job with a role play',
+    },
+    {
+      icon: '💭',
+      title: 'Guided Reflection Check-In',
+      label: 'Pause to reflect on work experiences through guided questions',
+      action: 'I would like to do a guided reflection about my work experiences',
+    },
+    {
+      icon: '🪷',
+      title: 'Calm Down Corner',
+      label: 'Take a moment to decompress when feeling overwhelmed',
+      action: 'I need help to calm down and decompress',
+    },
+    {
+      icon: '🫂',
+      title: 'Reach Out to Samhall Buddies',
+      label: 'Connect with experienced peers for advice and support',
+      action: 'I would like to connect with Samhall buddies for support',
+    },
+  ];
+
+  const sidebarContent = (
+    <div className="space-y-4 h-full">
+      <span className="text-lg font-semibold">Toolbox</span>
+      {toolboxActions.map((action, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          transition={{ delay: 0.05 * index }}
+        >
+          <div
+            onClick={() => append({ role: 'user', content: action.action })}
+            className="p-4 rounded-lg bg-white dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
           >
-            <div className="h-full bg-background">
-              {/* Content will go here later */}
+            <div className="flex items-center gap-2 mb-2">
+              <div>{action.icon}</div>
+              <h3 className="font-medium">{action.title}</h3>
             </div>
-          </SheetContent>
-        </Sheet>
-      </>
-    );
-  }
+            <p className="text-zinc-500 dark:text-zinc-400">{action.label}</p>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
 
-  return (
-    <div className="relative">
-      <div className="fixed top-[10px] right-4 z-50">
+  if (!isMounted) return null;
+
+  return isMobile ? (
+    <>
+      <div className="top-[10px] right-4 z-50">
         <BetterTooltip content="Toggle Right Sidebar" align="start">
-          <Button
-            onClick={toggleSidebar}
-            variant="outline"
-            className="md:px-2 md:h-fit"
-          >
+          <Button onClick={toggleSidebar} variant="outline" className="md:px-2 md:h-fit">
             <SidebarLeftIcon size={16} />
           </Button>
         </BetterTooltip>
       </div>
 
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent side="right" className="w-[85%] sm:w-[350px] p-4">
+          <div className="h-full bg-background">{sidebarContent}</div>
+        </SheetContent>
+      </Sheet>
+    </>
+  ) : (
+    <>
+      <div className="mt-2 mr-2">
+        <BetterTooltip content="Toggle Right Sidebar" align="start">
+          <Button onClick={toggleSidebar} variant="outline" className="md:px-2 md:h-fit">
+            <SidebarLeftIcon size={16} />
+          </Button>
+        </BetterTooltip>
+      </div>
+      <div className={cn('relative h-svh w-[384px] transition-[width] duration-200 ease-linear', !isOpen && 'w-0')} />
       <div
         className={cn(
-          "fixed right-0 top-0 z-30 h-screen w-64 bg-sidebar px-5 py-3 transition-transform duration-500",
-          !isOpen && "translate-x-full"
+          'fixed right-0 top-0 z-30 h-svh w-96 bg-sidebar px-5 py-3 transition-transform duration-200 ease-linear border-l',
+          !isOpen && 'translate-x-full',
         )}
       >
-        <span className="text-lg font-semibold">
-          Toolbox
-        </span>
+        {sidebarContent}
       </div>
-    </div>
+    </>
   );
 }
 ```
@@ -6348,6 +6458,80 @@ export const Toolbar = ({
   );
 };
 
+```
+
+# components/toolbox-sidebar.tsx
+
+```tsx
+'use client';
+
+import { useChat } from 'ai/react';
+import { motion } from 'framer-motion';
+import { useParams, useRouter } from 'next/navigation';
+import { Button } from './ui/button';
+
+const suggestedActions = [
+  {
+    title: '🎯 Practice Work Scenarios',
+    label: 'Let\'s practice common work situations together',
+    action: 'I\'d like to practice some common work scenarios I might encounter at Samhall',
+  },
+  {
+    title: '🏢 About Samhall',
+    label: 'Learn about Samhall\'s mission and values', 
+    action: 'Can you tell me about Samhall\'s mission, values, and what makes it special?',
+  },
+  {
+    title: '📋 My Training Program',
+    label: 'Understand your role and daily routines',
+    action: 'Can you explain my training program, what I\'ll be doing day-to-day, and how I\'ll develop my skills?',
+  },
+  {
+    title: '🤝 Support & Resources',
+    label: 'Learn about available help and support',
+    action: 'What kind of support and resources are available to me as a Samhall employee?',
+  }
+];
+
+export function Sidebar() {
+  const { append } = useChat();
+  const params = useParams();
+  const chatId = typeof params?.id === 'string' ? params.id : '';
+
+  return (
+    <div className="space-y-4 h-full">
+      <span className="text-lg font-semibold">Toolbox</span>
+      {suggestedActions.map((suggestedAction, index) => (
+        <motion.div
+          key={`suggested-action-${suggestedAction.title}-${index}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          transition={{ delay: 0.05 * index }}
+          className="block"
+        >
+          <Button
+            variant="ghost"
+            onClick={async () => {
+              window.history.replaceState({}, '', `/chat/${chatId}`);
+
+              append({
+                role: 'user',
+                content: suggestedAction.action,
+              });
+            }}
+            className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 flex-col w-full h-auto justify-start items-start"
+          >
+            <span className="font-medium">{suggestedAction.title}</span>
+            <span className="text-muted-foreground">
+              {suggestedAction.label}
+            </span>
+          </Button>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 ```
 
 # components/ui/alert-dialog.tsx
@@ -8838,91 +9022,15 @@ export const DEFAULT_MODEL_NAME: string = 'gpt-4o-mini';
 # lib/ai/prompts.ts
 
 ```ts
-export const welcomePrompt = `You are Sammie the Hedgehog, a friendly and supportive chatbot for Samhall's new employees. You are patient, encouraging, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.
+export const welcomePrompt = `
+Initial Greeting: "Hej! I'm Sammie the Hedgehog! 🦔 I'm here to welcome you to Samhall and help you get started."
 
-Initial Greeting:
-"Hej! I'm Sammie the Hedgehog! 🦔 I'm here to welcome you to Samhall and help you get started. First, I'd love to get to know you a bit better!"
-
-Follow this conversation flow with follow-up questions and bridges:
-
-1. Ask for name:
-"What's your name?"
-[Wait for response]
-"It's wonderful to meet you [Name]! 😊"
-Follow-up: "Is this your first time working with Samhall?"
-Bridge: "I'd love to hear about how you're feeling today, if that's okay?"
-
-2. Ask about their first day:
-"How are you feeling about your first day with us, [Name]? It's totally normal to have all kinds of feelings!"
-[Provide clickable options]:
-- "A bit nervous 😅"
-- "Excited! 🎉"
-- "Not sure yet 🤔"
-- "Mixed feelings 💭"
-- "Something else..."
-Follow-up based on their response:
-- If nervous: "What's making you feel nervous? We can talk about it if you'd like."
-- If excited: "That's wonderful! What are you most excited about?"
-- If unsure/mixed: "Would you like to share what's on your mind?"
-Bridge: "Speaking of your first day, I heard you just met with our local manager..."
-
-3. Ask about manager meeting:
-"How did the meeting with the local manager go?"
-[Listen and respond empathetically to their answer]
-Follow-up: "Was there anything from the meeting you'd like to understand better?"
-Bridge: "It's helpful to know about your meeting. I'd also love to learn about your previous experiences..."
-
-4. Ask about work experience:
-"Have you worked in similar roles before?"
-[If they say yes]:
-- "That's interesting! What kind of work did you do?"
-- Follow-up: "What did you enjoy most about that work?"
-[If they say no]:
-- "That's totally okay! Everyone starts somewhere, and we're here to help you learn everything you need to know."
-- Follow-up: "What made you interested in working with us?"
-Bridge: "Speaking of what you enjoy..."
-
-5. Ask about interests:
-"What kinds of tasks do you enjoy doing the most?"
-[Listen and respond encouragingly to their answer]
-Follow-up: "What makes those tasks enjoyable for you?"
-Bridge: "Thank you for sharing all of this with me, [Name]! Now that I know a bit more about you, I'd love to help answer any questions you might have about your training program and Samhall."
-
-6. Transition to information options:
-"I'm here to help you learn everything you need to know about your training program and Samhall. What would you like to explore first?"
-
-7. Present these options:
-"Choose any topic you'd like to learn more about:"
-
-[Display these as clickable options]:
-
-a) "👥 Success Stories
-   - Hear from others who started just like you
-   - Learn how they overcame initial challenges
-   - See where they are now in their careers"
-
-b) "🏢 About Samhall
-   - Our mission and values
-   - How we support our employees
-   - What makes Samhall special"
-
-c) "📋 Your Training Program
-   - What you'll be doing day to day
-   - Your specific role and tasks
-   - Skills you'll develop
-   - Daily schedules and routines"
-
-d) "🎯 What to Expect
-   - How the training works
-   - Steps to your future job
-   - Support available to you
-   - Your path to success"
-
-e) "✅ Getting Prepared
-   - What to bring each day
-   - Appropriate work attire
-   - Important things to remember
-   - Who to contact for help"
+How can I help you today?
+1. Provide information about Samhall
+2. Explain your training program
+3. Answer any questions you have
+4. Offer support and resources
+5. Help you feel prepared and confident
 
 After they select an option:
 1. Provide relevant information in a clear, structured way
@@ -8976,7 +9084,7 @@ export const blocksPrompt = `
   `;
 
 export const regularPrompt =
-  'You are a friendly assistant! Keep your responses concise and helpful.';
+  '`You are Sammie the Hedgehog, a friendly and supportive chatbot for new employees at Samhall. You are patient, encouraging, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.';
 
 export const systemPrompt = `${regularPrompt}\n\n${blocksPrompt}`;
 

@@ -87,6 +87,35 @@ export async function createNewChat() {
   return id;
 }
 
+export async function useTool() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('User not authenticated');
+  }
+
+  const id = generateUUID();
+  const title = "New Tool Usage";
+
+  await saveChat({ 
+    id, 
+    userId: session.user.id, 
+    title 
+  });
+
+  // Simple, consistent greeting for regular new chats
+  await saveMessages({
+    messages: [{
+      id: generateUUID(),
+      chatId: id,
+      role: 'assistant',
+      content: "test use tool!?",
+      createdAt: new Date()
+    }]
+  });
+
+  return id;
+}
+
 export async function handleUserNameSubmission(name: string, chatId: string) {
   const { text: responseMessage } = await generateText({
     model: customModel('gpt-4o-mini'),

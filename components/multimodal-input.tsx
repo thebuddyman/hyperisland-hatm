@@ -27,18 +27,30 @@ import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons';
 import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
+import { SuggestedActionsWithModal } from '@/components/suggested-actions-modal';
+
 
 const suggestedActions = [
   {
-    title: '🎯 Practice My Work Tasks',
-    label: 'Practice typical work situations together',
-    action: 'Practice typical work situations together',
+    title: '🎯 Practice Work Scenarios',
+    label: 'Let\'s practice common work situations together',
+    action: 'I\'d like to practice some common work scenarios I might encounter at Samhall',
   },
   {
-    title: '📚 Learn About the Program & Samhall',
-    label: 'Understanding Samhall better',
-    action: 'Help me understand Samhall better',
+    title: '🏢 About Samhall',
+    label: 'Learn about Samhall\'s mission and values',
+    action: 'Can you tell me about Samhall\'s mission, values, and what makes it special?',
   },
+  {
+    title: '📋 My Training Program',
+    label: 'Understand your role and daily routines',
+    action: 'Can you explain my training program, what I\'ll be doing day-to-day, and how I\'ll develop my skills?',
+  },
+  {
+    title: '🤝 Support & Resources',
+    label: 'Learn about available help and support',
+    action: 'What kind of support and resources are available to me as a Samhall employee?',
+  }
 ];
 
 export function MultimodalInput({
@@ -232,6 +244,12 @@ export function MultimodalInput({
             ))}
           </div>
         )} */}
+
+      {messages.length === 0 &&
+        attachments.length === 0 &&
+        uploadQueue.length === 0 && (
+          <SuggestedActionsWithModal chatId={chatId} append={append} />
+        )}
 
       <input
         type="file"
