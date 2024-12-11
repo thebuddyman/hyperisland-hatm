@@ -73,7 +73,7 @@ const OnboardingStep = ({
                 <motion.span 
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute top-2 right-2 text-sm rounded-full w-5 h-5 flex items-center justify-center"
+                  className="absolute top-2 right-2 text-sm rounded-full size-5 flex items-center justify-center"
                 >
                   ✓
                 </motion.span>
@@ -98,7 +98,7 @@ const OnboardingStep = ({
         {Array.from({ length: totalSteps }).map((_, idx) => (
           <div
             key={idx}
-            className={`h-2 w-2 rounded-full transition-colors ${
+            className={`size-2 rounded-full transition-colors ${
               idx === currentStep ? 'bg-primary' : 'bg-muted'
             }`}
           />
@@ -127,19 +127,19 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   const steps = [
     {
       title: "Welcome to Samhall! 👋",
-      message: "Hi there! I'm Sammie, your personal guide at Samhall. I'm here to help with anything you need!",
+      message: "Hi there! I&apos;m Sammie, your personal guide at Samhall. I&apos;m here to help with anything you need!",
       ctaText: "Get started →",
     },
     {
-      title: "You're Not Alone 🤗",
-      message: "I know starting something new can feel like a lot, but don't worry—you're not alone. I'm here to guide you every step of the way.",
-      ctaText: "That's wonderful →",
+      title: "You&apos;re Not Alone 🤗",
+      message: "I know starting something new can feel like a lot, but don&apos;t worry—you&apos;re not alone. I&apos;m here to guide you every step of the way.",
+      ctaText: "That&apos;s wonderful →",
     },
     {
       title: "How I Can Help You 💪",
       message: (
         <div className="space-y-4">
-          <p>Here's how I can help:</p>
+          <p>Here&apos;s how I can help:</p>
           <ul className="list-none text-left space-y-3">
             <li className="flex items-center gap-2">
               <span className="text-primary">✓</span> Answer your questions quickly
@@ -156,7 +156,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       ctaText: "Awesome →",
     },
     {
-      title: "Let's Personalize Your Experience 🎯",
+      title: "Let&apos;s Personalize Your Experience 🎯",
       message: "What would you like help with? (Select all that apply)",
       ctaText: "Continue →",
       showOptions: true,
@@ -167,7 +167,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       message: (
         <div className="space-y-4">
           <p>
-            Thank you for letting me know! I'm here whenever you need help with:
+            Thank you for letting me know! I&apos;m here whenever you need help with:
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
             {selectedOptions.map((optionId) => {
