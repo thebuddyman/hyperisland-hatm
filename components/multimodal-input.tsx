@@ -28,6 +28,8 @@ import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { SuggestedActionsWithModal } from '@/components/suggested-actions-modal';
+import { useLanguage } from '@/components/context/language-context';
+import { getTranslation } from '@/lib/translations';
 
 
 const suggestedActions = [
@@ -90,6 +92,12 @@ export function MultimodalInput({
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
+
+  const { language } = useLanguage(); // Access global language context
+
+  // Get translations for both pieces of text
+  const copySendMessage = getTranslation(language, 'multiModal.sendMesssage');
+
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -282,7 +290,7 @@ export function MultimodalInput({
 
       <Textarea
         ref={textareaRef}
-        placeholder="Send a message..."
+        placeholder={getTranslation(language, 'multiModal.sendMessage')}
         value={input}
         onChange={handleInput}
         className={cx(

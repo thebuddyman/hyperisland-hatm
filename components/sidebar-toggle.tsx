@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from 'react';
 import { BetterTooltip } from '@/components/ui/tooltip';
-import { RouteIcon, SidebarLeftIcon } from './icons';
+import { BellIcon, SidebarLeftIcon } from './icons';
 import { Button } from '@/components/ui/button';
 import { useRightSidebar } from './context/right-sidebar-context';
 import { useSidebar } from './ui/sidebar';
@@ -33,7 +33,7 @@ export function RightSidebarToggle({
   return (
     // <BetterTooltip content="Toggle Notifications" align="start">
       <Button onClick={toggleRightSidebar} variant="outline" className={`p-3 md:h-fit ${className}`}>
-        <RouteIcon size={24} />
+        <BellIcon size={16} />
       </Button>
     // </BetterTooltip>
   );

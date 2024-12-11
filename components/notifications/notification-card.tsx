@@ -3,9 +3,11 @@ import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { type Notification } from '@/lib/data/notifications';
 import { createNewChat } from '@/app/(chat)/actions';
+import { useRightSidebar } from '@/components/context/right-sidebar-context';
 
 export default function NotificationCard({ notification }: { notification: Notification }) {
     const router = useRouter();
+    const { toggleSidebar } = useRightSidebar(); // Add this line
 
     // Local state to manage the status
     const [status, setStatus] = useState(notification.status);
@@ -34,6 +36,9 @@ export default function NotificationCard({ notification }: { notification: Notif
 
             // Create a new chat and navigate to it
             const chatId = await createNewChat(notification.description);
+
+            toggleSidebar(); // Add this line
+
             router.push(`/chat/${chatId}`);
         } catch (error) {
             console.error('Failed to handle notification:', error);

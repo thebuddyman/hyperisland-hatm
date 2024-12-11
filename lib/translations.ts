@@ -6,6 +6,9 @@ export const translations = {
         },
         suggestedActions: {
             seeMore: "See more options"
+        },
+        multiModal: {
+            sendMessage: "Send a message..."
         }
     },
     sv: {
@@ -15,6 +18,9 @@ export const translations = {
         },
         suggestedActions: {
             seeMore: "Se fler alternativ"
+        },
+        multiModal: {
+            sendMessage: "Skriv ett meddelande..."
         }
     },
 };

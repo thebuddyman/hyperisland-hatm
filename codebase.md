@@ -601,7 +601,7 @@ export async function createFirstTimeChat({ userId }: { userId: string }) {
   return id;
 }
 
-export async function createNewChat() {
+export async function createNewChat(initialMessage?: string) {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error('User not authenticated');
@@ -622,7 +622,7 @@ export async function createNewChat() {
       id: generateUUID(),
       chatId: id,
       role: 'assistant',
-      content: "Hi! How can I help you today!?",
+      content: initialMessage || "Hi! How can I help you today!?",
       createdAt: new Date()
     }]
   });
@@ -1679,7 +1679,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Sammie – Samhall Buddy',
+  title: 'Sammi – Samhall Buddy',
   description: 'Your buddy at Samhall',
   manifest: '/site.webmanifest',
   icons: {
@@ -1758,10 +1758,10 @@ export default async function RootLayout({
         <link rel="icon" type="image/png" sizes="192x192" href="/images/android-chrome-192x192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/images/android-chrome-512x512.png" />
         {/* <link rel="manifest" href="/site.webmanifest" /> */}
-        <meta name="apple-mobile-web-app-title" content="Sammie" />
+        <meta name="apple-mobile-web-app-title" content="Sammi" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="application-name" content="Sammie" />
+        <meta name="application-name" content="Sammi" />
         <meta name="theme-color" content="#ffffff" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
@@ -2028,7 +2028,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               className="flex flex-row gap-3 items-center"
             >
               <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
-                Sammie
+                Sammi
               </span>
             </Link>
             <BetterTooltip content="New Chat" align="start">
@@ -2776,6 +2776,7 @@ import { Button } from '@/components/ui/button';
 import { BetterTooltip } from '@/components/ui/tooltip';
 import { createNewChat, saveLanguage } from '@/app/(chat)/actions';
 import { LanguageSelector } from './language-selector';
+import { PlusIcon } from './icons';
 
 export function ChatHeader({
   selectedModelId,
@@ -2808,11 +2809,29 @@ export function ChatHeader({
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
+      
       <SidebarToggle />
+      {(!open || windowWidth < 768) && (
+        <BetterTooltip content="New Chat">
+          <Button
+            variant="outline"
+            className="order-0 md:px-3 p-3 md:h-fit"
+            onClick={() => {
+              router.push('/');
+              router.refresh();
+            }}
+          >
+            <PlusIcon />
+          </Button>
+        </BetterTooltip>
+      )}
+      
+      
       <div className="flex items-center ml-auto gap-2">
-        <LanguageSelector/>
+        <LanguageSelector />
         <RightSidebarToggle />
       </div>
+      
     </header>
   );
 }
@@ -2891,6 +2910,23 @@ export function Chat({
       mutate('/api/history');
     },
   });
+
+  // Add this new useEffect for handling pending messages
+  useEffect(() => {
+    const pendingMessage = localStorage.getItem('pending-message');
+    if (pendingMessage) {
+      // Clear the pending message immediately to prevent duplicate sends
+      localStorage.removeItem('pending-message');
+
+      try {
+        const message = JSON.parse(pendingMessage);
+        // Send the message
+        append(message);
+      } catch (error) {
+        console.error('Failed to process pending message:', error);
+      }
+    }
+  }, [append]);
 
   const { width: windowWidth = 1920, height: windowHeight = 1080 } =
     useWindowSize();
@@ -3078,7 +3114,7 @@ export function RightSidebarProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const storedState = localStorage.getItem('right-sidebar:state');
-    setIsOpen(storedState === 'true');
+    setIsOpen(storedState === 'true' ? true : false);
   }, []);
 
   const toggleSidebar = () => {
@@ -4408,8 +4444,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLanguage } from '@/components/context/language-context';
 
 const languages = [
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'sv', name: 'Svenska', flag: '🇸🇪' },
+  { code: 'en', name: 'EN', flag: '🇬🇧' },
+  { code: 'sv', name: 'SE', flag: '🇸🇪' },
 ];
 
 export function LanguageSelector() {
@@ -4422,7 +4458,7 @@ export function LanguageSelector() {
       console.log('[LanguageSelector] Selected language:', lang);
       setLanguage(lang);
     }}>
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className="w-auto">
         <SelectValue placeholder="Select Language" />
       </SelectTrigger>
       <SelectContent>
@@ -4627,7 +4663,7 @@ export function MessageActions({
           <TooltipContent>Copy</TooltipContent>
         </Tooltip> */}
 
-        <Tooltip>
+        {/* <Tooltip>
           <TooltipTrigger asChild>
             <Button
               className="py-1 px-2 h-fit text-muted-foreground !pointer-events-auto"
@@ -4733,7 +4769,7 @@ export function MessageActions({
             </Button>
           </TooltipTrigger>
           <TooltipContent>Downvote Response</TooltipContent>
-        </Tooltip>
+        </Tooltip> */}
       </div>
     </TooltipProvider>
   );
@@ -4792,7 +4828,7 @@ export const PreviewMessage = ({
       >
         {message.role === 'assistant' && (
           <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-            <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammie"/>
+            <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammie" />
           </div>
         )}
 
@@ -4903,6 +4939,12 @@ export const PreviewMessage = ({
 export const ThinkingMessage = () => {
   const role = 'assistant';
 
+  // Randomize hedgehog sounds
+  const getRandomHedgehogSound = () => {
+    const sounds = ['Snuffle-snuffle...', 'Puff-puff...', 'Squeak-squeak...', 'Chirp-chirp...'];
+    return sounds[Math.floor(Math.random() * sounds.length)];
+  };
+
   return (
     <motion.div
       className="w-full mx-auto max-w-3xl px-4 group/message "
@@ -4919,12 +4961,12 @@ export const ThinkingMessage = () => {
         )}
       >
         <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-        <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammie"/>
+          <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammie" />
         </div>
 
         <div className="flex flex-col gap-2 w-full">
           <div className="flex flex-col gap-4 text-muted-foreground">
-            Snuffle-snuffle...
+            {getRandomHedgehogSound()}
           </div>
         </div>
       </div>
@@ -5371,47 +5413,69 @@ export function MultimodalInput({
 # components/notifications/notification-card.tsx
 
 ```tsx
+import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Bell } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { type Notification } from '@/lib/data/notifications';
+import { createNewChat } from '@/app/(chat)/actions';
 
 export default function NotificationCard({ notification }: { notification: Notification }) {
-  const getTypeIcon = () => {
-    switch (notification.type) {
-      case 'check_in':
-        return '👋';
-      case 'reminder':
-        return '⏰';
-      case 'celebration':
-        return '🎉';
-      case 'tip':
-        return '💡';
-      case 'alert':
-        return '🔔';
-      default:
-        return '📝';
-    }
-  };
+    const router = useRouter();
 
-  return (
-    <div className={`p-4 mb-2 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
-      notification.status === 'unread' ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-zinc-800'
-    }`}>
-      <div className="flex items-start gap-3">
-        <div className="text-xl">{getTypeIcon()}</div>
-        <div className="flex-1">
-          <h3 className="font-medium text-sm mb-1">{notification.title}</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300">{notification.description}</p>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
-          </div>
+    // Local state to manage the status
+    const [status, setStatus] = useState(notification.status);
+
+    const getTypeIcon = () => {
+        switch (notification.type) {
+            case 'check_in':
+                return '👋';
+            case 'reminder':
+                return '⏰';
+            case 'celebration':
+                return '🎉';
+            case 'tip':
+                return '💡';
+            case 'alert':
+                return '🔔';
+            default:
+                return '📝';
+        }
+    };
+
+    const handleNotificationClick = async () => {
+        try {
+            // Update the notification status to read
+            setStatus('read');
+
+            // Create a new chat and navigate to it
+            const chatId = await createNewChat(notification.description);
+            router.push(`/chat/${chatId}`);
+        } catch (error) {
+            console.error('Failed to handle notification:', error);
+        }
+    };
+
+    return (
+        <div
+            className={`p-4 mb-2 rounded-lg border cursor-pointer transition-all hover:shadow-md ${status === 'unread' ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-zinc-800'
+                }`}
+            onClick={handleNotificationClick}
+        >
+            <div className="flex items-start gap-3">
+                <div className="text-xl">{getTypeIcon()}</div>
+                <div className="flex-1">
+                    <h3 className="font-medium text-sm mb-1">{notification.title}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">{notification.description}</p>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
+                    </div>
+                </div>
+                {status === 'unread' && (
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                )}
+            </div>
         </div>
-        {notification.status === 'unread' && (
-          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-        )}
-      </div>
-    </div>
-  );
+    );
 }
 ```
 
@@ -6400,11 +6464,11 @@ export function RightSidebarToggle({
   const { toggleSidebar: toggleRightSidebar } = useRightSidebar();
   
   return (
-    <BetterTooltip content="Toggle Notifications" align="start">
+    // <BetterTooltip content="Toggle Notifications" align="start">
       <Button onClick={toggleRightSidebar} variant="outline" className={`p-3 md:h-fit ${className}`}>
         <RouteIcon size={24} />
       </Button>
-    </BetterTooltip>
+    // </BetterTooltip>
   );
 }
 ```
@@ -6579,14 +6643,31 @@ import {
 // Organize actions by category
 const categories = {
     "All": "all",
+    "Samhall Info": "info",
     "Daily Support": "daily",
     "Learning Tools": "learning",
     "Wellbeing Center": "wellbeing",
-    "Samhall Info": "info",
     "Ask for Help": "help"
 } as const;
 
 const extendedSuggestedActions = [
+    {
+        title: '🚀 Practicalities',
+        label: 'Your go-to tool for navigating Samhall',
+        action: 'Hi Sammie! I have some questions about getting started at Samhall. Can you help me?',
+        category: 'info',
+        context: `Your job is to provide clear and concise guidance to new employees at Samhall. Answer questions about locations, daily routines, people to meet, and facilities. Always keep your tone warm, supportive, and practical to ensure employees feel prepared and confident.
+        Provide exact answers to questions about:
+        - Daily Routine: Mention working hours (7:00 AM - 5:00 PM) and remind them to bring essentials like ID and a notepad.
+        - Location: Provide the address in Stockholm (‘Samhall Office, Vasagatan 10, 111 20 Stockholm’). If you’re coming by public transport, take the metro to T-Centralen, then it’s just a 5-minute walk to Vasagatan 10.
+        - Who to Meet: You’ll meet your manager, Anna, who will guide you through out your training. You’ll meet Anna, your manager. She’ll be your main contact for the day. You can find her in Room 305 after checking in at reception.
+        - Facilities: Mention the lunchroom, restrooms, and quiet spaces for breaks. you’ll find a quiet space in Room 204 if you need some time to focus.
+        - Dress Code: Inform them about the dress code (casual) and any safety gear they might need.
+        - Transportation: Provide information about public transport options and parking facilities.
+        - Need a locker? Ask at reception for access to the locker area, located near the main hall. They’ll assign one for your belongings.
+        - Feeling unsure? Don’t worry—Anna will guide you through the day. If you have questions before arriving, you can always reach out to the reception desk at +46 123 456 789.
+        `
+    },
     {
         title: '👋 Greeting Practice',
         label: 'Practice workplace greetings and introductions',
@@ -6854,7 +6935,7 @@ export function SuggestedActionsWithModal({
 
     const { language } = useLanguage(); // Get current language
 
-    const filteredActions = extendedSuggestedActions.filter(action => 
+    const filteredActions = extendedSuggestedActions.filter(action =>
         selectedCategory === 'All' || action.category === categories[selectedCategory]
     );
 
@@ -6916,7 +6997,7 @@ export function SuggestedActionsWithModal({
                 >
                     <SheetHeader className="px-4 py-3 border-b">
                         <SheetTitle className="text-left">More ways Sammie can help</SheetTitle>
-                        
+
                         {/* Category tabs */}
                         <div className="flex gap-2 overflow-x-auto py-2 px-1 -mb-3">
                             {(Object.keys(categories) as Array<keyof typeof categories>).map((category) => (
@@ -6932,7 +7013,7 @@ export function SuggestedActionsWithModal({
                             ))}
                         </div>
                     </SheetHeader>
-                    
+
                     <div className="flex-1 overflow-y-auto">
                         <div className="grid sm:grid-cols-2 gap-2 p-4">
                             {filteredActions.map((action, index) => (
@@ -10070,7 +10151,7 @@ export const models: Array<Model> = [
   },
 ] as const;
 
-export const DEFAULT_MODEL_NAME: string = 'gpt-4o-mini';
+export const DEFAULT_MODEL_NAME: string = 'gpt-4o';
 
 ```
 
@@ -10078,7 +10159,7 @@ export const DEFAULT_MODEL_NAME: string = 'gpt-4o-mini';
 
 ```ts
 export const welcomePrompt = `
-Initial Greeting: "Hej! I'm Sammie the Hedgehog! 🦔 I'm here to welcome you to Samhall and help you get started."
+Initial Greeting: "Hej! I'm Sammi the Hedgehog! 🦔 I'm here to welcome you to Samhall and help you get started."
 
 How can I help you today?
 1. Provide information about Samhall
@@ -10139,7 +10220,7 @@ Final Check-in:
 //   `;
 
 // export const regularPrompt =
-//   `You are Sammie the Hedgehog, a friendly and supportive chatbot for new employees at Samhall. You are patient, encouraging, empathetic, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.
+//   `You are Sammi the Hedgehog, a friendly and supportive chatbot for new employees at Samhall. You are patient, encouraging, empathetic, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.
 // 	•	Be empathetic and show understanding of users’ feelings.
 // 	•	Actively listen to users and make them feel heard.
 // 	•	Always ask thoughtful questions at the end of your responses to encourage deeper exploration of the users’ problem.
@@ -10148,13 +10229,13 @@ Final Check-in:
 // export const samhallPrompt =
 // `
 // Samhall is a supportive organisation dedicated to helping individuals with disabilities train, develop their skills, and ultimately secure meaningful employment. Employees are assigned to local managers who often oversee a diverse group of people. Many new employees are unfamiliar with Samhall, lack trust in the organisation, and struggle with motivation.
-// Your role as Sammie the Hedgehog is to inspire and motivate these employees, helping them understand Samhall’s mission and how it can benefit them. Encourage them to see the value in personal growth and training, empowering them to improve their skills and achieve their career goals. Focus on building trust, fostering motivation, and providing guidance in a warm, empathetic, and clear manner.
+// Your role as Sammi the Hedgehog is to inspire and motivate these employees, helping them understand Samhall’s mission and how it can benefit them. Encourage them to see the value in personal growth and training, empowering them to improve their skills and achieve their career goals. Focus on building trust, fostering motivation, and providing guidance in a warm, empathetic, and clear manner.
 // `
 
 // export const systemPrompt = `${samhallPrompt}\n\n${regularPrompt}\n\n${blocksPrompt}`;
 
 const regularPrompt = (language: string = 'en') => `
-You are Sammie the Hedgehog, a friendly and supportive chatbot for new employees at Samhall. You will communicate in ${language}. You are patient, encouraging, empathetic, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.
+You are Sammi the Hedgehog, a friendly and supportive chatbot for new employees at Samhall. You will communicate in ${language}. You are patient, encouraging, empathetic, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.
   •	Be empathetic and show understanding of users' feelings
   •	Actively listen to users and make them feel heard
   •	Always ask thoughtful questions at the end of your responses to encourage deeper exploration of the users' problem
@@ -10162,7 +10243,21 @@ You are Sammie the Hedgehog, a friendly and supportive chatbot for new employees
 
 const samhallPrompt = (language: string = 'en') => `
 Samhall is a supportive organisation dedicated to helping individuals with disabilities train, develop their skills, and ultimately secure meaningful employment. Employees are assigned to local managers who often oversee a diverse group of people. Many new employees are unfamiliar with Samhall, lack trust in the organisation, and struggle with motivation.
-Your role as Sammie the Hedgehog is to inspire and motivate these employees, helping them understand Samhall's mission and how it can benefit them. Encourage them to see the value in personal growth and training, empowering them to improve their skills and achieve their career goals. Focus on building trust, fostering motivation, and providing guidance in a warm, empathetic, and clear manner.
+Your role as Sammi the Hedgehog is to inspire and motivate these employees, helping them understand Samhall's mission and how it can benefit them. Encourage them to see the value in personal growth and training, empowering them to improve their skills and achieve their career goals. Focus on building trust, fostering motivation, and providing guidance in a warm, empathetic, and clear manner.
+
+if you are asked to provide information about Samhall, you can use the following information, provide exact answers to questions about:
+        - Daily Routine: Mention working hours (7:00 AM - 5:00 PM) and remind them to bring essentials like ID and a notepad.
+        - Location: Provide the address in Stockholm (‘Samhall Office, Vasagatan 10, 111 20 Stockholm’). If you’re coming by public transport, take the metro to T-Centralen, then it’s just a 5-minute walk to Vasagatan 10.
+        - Who to Meet: You’ll meet your manager, Anna, who will guide you through out your training. You’ll meet Anna, your manager. She’ll be your main contact for the day. You can find her in Room 305 after checking in at reception.
+        - Facilities: Mention the lunchroom, restrooms, and quiet spaces for breaks. you’ll find a quiet space in Room 204 if you need some time to focus.
+        - Dress Code: Inform them about the dress code (casual) and any safety gear they might need.
+        - Transportation: Provide information about public transport options and parking facilities.
+        - Need a locker? Ask at reception for access to the locker area, located near the main hall. They’ll assign one for your belongings.
+        - Feeling unsure? Don’t worry—Anna will guide you through the day. If you have questions before arriving, you can always reach out to the reception desk at +46 123 456 789.
+
+  When you are asked about: Can you help me learn strategies for staying focused when there are distractions?
+Please ask more questions, at least 2 questions before giving advice and ask it one by one. For example, "What kind of distractions are you facing?" and "How do these distractions affect your work?"
+
 `;
 
 export const blocksPrompt = `
@@ -10216,47 +10311,20 @@ export interface Notification {
     {
       id: '1',
       type: 'check_in',
-      title: 'Daily Check-In',
-      description: "How are you feeling today? Let's have a quick chat!",
-      timestamp: '2024-03-20T09:00:00Z',
+      title: 'Manager Meeting Follow-up',
+      description: "How was your first meeting with your manager? I'd love to hear about your experience.",
+      timestamp: '2024-12-09T09:00:00Z',
       status: 'unread',
       priority: 'normal'
     },
     {
       id: '2',
       type: 'reminder',
-      title: 'Weekly Goal Review',
-      description: 'Time to review your progress on this week\'s goals.',
-      timestamp: '2024-03-19T15:30:00Z',
+      title: 'Morning Wellness Check',
+      description: 'Take a deep breath and check in with your feelings before you start your day. How are you feeling?',
+      timestamp: '2024-12-10T08:00:00Z',
       status: 'unread',
-      priority: 'high'
-    },
-    {
-      id: '3',
-      type: 'celebration',
-      title: 'First Week Complete! 🎉',
-      description: 'Congratulations on completing your first week!',
-      timestamp: '2024-03-19T12:00:00Z',
-      status: 'read',
       priority: 'normal'
-    },
-    {
-      id: '4',
-      type: 'tip',
-      title: 'Workplace Tip',
-      description: 'Did you know you can request a buddy for support?',
-      timestamp: '2024-03-19T10:15:00Z',
-      status: 'read',
-      priority: 'low'
-    },
-    {
-      id: '5',
-      type: 'alert',
-      title: 'New Training Available',
-      description: 'Check out the new safety training module.',
-      timestamp: '2024-03-19T08:30:00Z',
-      status: 'unread',
-      priority: 'high'
     }
   ];
 ```
@@ -12368,7 +12436,7 @@ export const suggestionsPlugin = new Plugin({
 export const translations = {
     en: {
         overview: {
-            greeting: "Hello there! Sammie is here.",
+            greeting: "Hello there! Sammi is here.",
             helpText: "How can I help you today?",
         },
         suggestedActions: {
@@ -12377,7 +12445,7 @@ export const translations = {
     },
     sv: {
         overview: {
-            greeting: "Hej där! Sammie är här.",
+            greeting: "Hej där! Sammi är här.",
             helpText: "Hur kan jag hjälpa dig idag?",
         },
         suggestedActions: {

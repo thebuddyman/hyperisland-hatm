@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useLanguage } from '@/components/context/language-context';
 import { getTranslation } from '@/lib/translations';
 import { motion } from 'framer-motion';
@@ -293,6 +293,37 @@ const extendedSuggestedActions = [
     }
 ];
 
+// Create the ActionButton component
+const ActionButton = React.memo(({
+    action,
+    index,
+    onAction
+}: {
+    action: any,  // We'll type this properly later
+    index: number,
+    onAction: (action: any) => void
+}) => (
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        transition={{ delay: 0.05 * index }}
+    >
+        <Button
+            variant="ghost"
+            onClick={() => onAction(action)}
+            className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 flex-col w-full h-auto justify-start items-start"
+        >
+            <span className="font-medium">{action.title}</span>
+            <span className="text-muted-foreground">
+                {action.label}
+            </span>
+        </Button>
+    </motion.div>
+));
+
+ActionButton.displayName = 'ActionButton';
+
 export function SuggestedActionsWithModal({
     chatId,
     append
@@ -303,56 +334,47 @@ export function SuggestedActionsWithModal({
     const initialVisibleCount = 2;
     const [isOpen, setIsOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<keyof typeof categories>('All');
+    const { language } = useLanguage();
 
-    const { language } = useLanguage(); // Get current language
+    const handleAction = useCallback((action: typeof extendedSuggestedActions[0]) => {
+        window.history.replaceState({}, '', `/chat/${chatId}`);
+        setIsOpen(false);
+        append({
+            role: 'user',
+            content: action.action,
+            systemMessage: action.context
+        });
+    }, [chatId, append]);
 
-    const filteredActions = extendedSuggestedActions.filter(action =>
-        selectedCategory === 'All' || action.category === categories[selectedCategory]
+    const filteredActions = useMemo(() =>
+        extendedSuggestedActions.filter(action =>
+            selectedCategory === 'All' || action.category === categories[selectedCategory]
+        ),
+        [selectedCategory]
     );
 
-    const ActionButton = ({ action, index }: { action: typeof extendedSuggestedActions[0], index: number }) => (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ delay: 0.05 * index }}
-        >
-            <Button
-                variant="ghost"
-                onClick={async () => {
-                    window.history.replaceState({}, '', `/chat/${chatId}`);
-                    setIsOpen(false);
-                    append({
-                        role: 'user',
-                        content: action.action,
-                        // Include context for AI processing
-                        systemMessage: action.context
-                    });
-                }}
-                className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 flex-col w-full h-auto justify-start items-start"
-            >
-                <span className="font-medium">{action.title}</span>
-                <span className="text-muted-foreground">
-                    {action.label}
-                </span>
-            </Button>
-        </motion.div>
-    );
+    const initialActions = useMemo(() => {
+        // Create a copy of the array to avoid mutating the original
+        const shuffled = [...extendedSuggestedActions]
+            .sort(() => Math.random() - 0.5); // Shuffle the array
+
+        // Take first two items from shuffled array
+        return shuffled.slice(0, initialVisibleCount);
+    }, []); // Empty dependency array means it will create new random selection on each mount
 
     return (
         <div className="grid gap-2 w-full">
-            {/* Initial visible actions */}
             <div className="grid sm:grid-cols-2 gap-2">
-                {extendedSuggestedActions.slice(0, initialVisibleCount).map((action, index) => (
+                {initialActions.map((action, index) => (
                     <ActionButton
                         key={`initial-${action.title}`}
                         action={action}
                         index={index}
+                        onAction={handleAction}
                     />
                 ))}
             </div>
 
-            {/* See More Button with Sheet */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild>
                     <Button
@@ -369,7 +391,6 @@ export function SuggestedActionsWithModal({
                     <SheetHeader className="px-4 py-3 border-b">
                         <SheetTitle className="text-left">More ways Sammie can help</SheetTitle>
 
-                        {/* Category tabs */}
                         <div className="flex gap-2 overflow-x-auto py-2 px-1 -mb-3">
                             {(Object.keys(categories) as Array<keyof typeof categories>).map((category) => (
                                 <Button
@@ -392,6 +413,7 @@ export function SuggestedActionsWithModal({
                                     key={`modal-${action.title}`}
                                     action={action}
                                     index={index}
+                                    onAction={handleAction}
                                 />
                             ))}
                         </div>
