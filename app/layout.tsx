@@ -9,7 +9,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Sammie – Samhall Buddy',
+  title: 'Sammi – Samhall Buddy',
   description: 'Your buddy at Samhall',
   manifest: '/site.webmanifest',
   icons: {
@@ -88,10 +88,10 @@ export default async function RootLayout({
         <link rel="icon" type="image/png" sizes="192x192" href="/images/android-chrome-192x192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/images/android-chrome-512x512.png" />
         {/* <link rel="manifest" href="/site.webmanifest" /> */}
-        <meta name="apple-mobile-web-app-title" content="Sammie" />
+        <meta name="apple-mobile-web-app-title" content="Sammi" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="application-name" content="Sammie" />
+        <meta name="application-name" content="Sammi" />
         <meta name="theme-color" content="#ffffff" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>

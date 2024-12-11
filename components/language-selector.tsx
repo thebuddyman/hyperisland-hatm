@@ -3,8 +3,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLanguage } from '@/components/context/language-context';
 
 const languages = [
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'sv', name: 'Svenska', flag: '🇸🇪' },
+  { code: 'en', name: 'EN', flag: '🇬🇧' },
+  { code: 'sv', name: 'SE', flag: '🇸🇪' },
 ];
 
 export function LanguageSelector() {
@@ -17,7 +17,7 @@ export function LanguageSelector() {
       console.log('[LanguageSelector] Selected language:', lang);
       setLanguage(lang);
     }}>
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className="w-auto">
         <SelectValue placeholder="Select Language" />
       </SelectTrigger>
       <SelectContent>

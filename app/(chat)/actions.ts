@@ -66,7 +66,7 @@ export async function createFirstTimeChat({ userId }: { userId: string }) {
   return id;
 }
 
-export async function createNewChat() {
+export async function createNewChat(initialMessage?: string) {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error('User not authenticated');
@@ -87,7 +87,7 @@ export async function createNewChat() {
       id: generateUUID(),
       chatId: id,
       role: 'assistant',
-      content: "Hi! How can I help you today!?",
+      content: initialMessage || "Hi! How can I help you today!?",
       createdAt: new Date()
     }]
   });

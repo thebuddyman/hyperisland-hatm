@@ -14,14 +14,31 @@ import {
 // Organize actions by category
 const categories = {
     "All": "all",
+    "Samhall Info": "info",
     "Daily Support": "daily",
     "Learning Tools": "learning",
     "Wellbeing Center": "wellbeing",
-    "Samhall Info": "info",
     "Ask for Help": "help"
 } as const;
 
 const extendedSuggestedActions = [
+    {
+        title: '🚀 Practicalities',
+        label: 'Your go-to tool for navigating Samhall',
+        action: 'Hi Sammie! I have some questions about getting started at Samhall. Can you help me?',
+        category: 'info',
+        context: `Your job is to provide clear and concise guidance to new employees at Samhall. Answer questions about locations, daily routines, people to meet, and facilities. Always keep your tone warm, supportive, and practical to ensure employees feel prepared and confident.
+        Provide exact answers to questions about:
+        - Daily Routine: Mention working hours (7:00 AM - 5:00 PM) and remind them to bring essentials like ID and a notepad.
+        - Location: Provide the address in Stockholm (‘Samhall Office, Vasagatan 10, 111 20 Stockholm’). If you’re coming by public transport, take the metro to T-Centralen, then it’s just a 5-minute walk to Vasagatan 10.
+        - Who to Meet: You’ll meet your manager, Anna, who will guide you through out your training. You’ll meet Anna, your manager. She’ll be your main contact for the day. You can find her in Room 305 after checking in at reception.
+        - Facilities: Mention the lunchroom, restrooms, and quiet spaces for breaks. you’ll find a quiet space in Room 204 if you need some time to focus.
+        - Dress Code: Inform them about the dress code (casual) and any safety gear they might need.
+        - Transportation: Provide information about public transport options and parking facilities.
+        - Need a locker? Ask at reception for access to the locker area, located near the main hall. They’ll assign one for your belongings.
+        - Feeling unsure? Don’t worry—Anna will guide you through the day. If you have questions before arriving, you can always reach out to the reception desk at +46 123 456 789.
+        `
+    },
     {
         title: '👋 Greeting Practice',
         label: 'Practice workplace greetings and introductions',
@@ -289,7 +306,7 @@ export function SuggestedActionsWithModal({
 
     const { language } = useLanguage(); // Get current language
 
-    const filteredActions = extendedSuggestedActions.filter(action => 
+    const filteredActions = extendedSuggestedActions.filter(action =>
         selectedCategory === 'All' || action.category === categories[selectedCategory]
     );
 
@@ -351,7 +368,7 @@ export function SuggestedActionsWithModal({
                 >
                     <SheetHeader className="px-4 py-3 border-b">
                         <SheetTitle className="text-left">More ways Sammie can help</SheetTitle>
-                        
+
                         {/* Category tabs */}
                         <div className="flex gap-2 overflow-x-auto py-2 px-1 -mb-3">
                             {(Object.keys(categories) as Array<keyof typeof categories>).map((category) => (
@@ -367,7 +384,7 @@ export function SuggestedActionsWithModal({
                             ))}
                         </div>
                     </SheetHeader>
-                    
+
                     <div className="flex-1 overflow-y-auto">
                         <div className="grid sm:grid-cols-2 gap-2 p-4">
                             {filteredActions.map((action, index) => (

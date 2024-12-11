@@ -15,7 +15,7 @@ export function RightSidebarProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const storedState = localStorage.getItem('right-sidebar:state');
-    setIsOpen(storedState === 'true');
+    setIsOpen(storedState === 'true' ? true : false);
   }, []);
 
   const toggleSidebar = () => {

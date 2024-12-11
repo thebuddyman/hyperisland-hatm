@@ -69,6 +69,23 @@ export function Chat({
     },
   });
 
+  // Add this new useEffect for handling pending messages
+  useEffect(() => {
+    const pendingMessage = localStorage.getItem('pending-message');
+    if (pendingMessage) {
+      // Clear the pending message immediately to prevent duplicate sends
+      localStorage.removeItem('pending-message');
+
+      try {
+        const message = JSON.parse(pendingMessage);
+        // Send the message
+        append(message);
+      } catch (error) {
+        console.error('Failed to process pending message:', error);
+      }
+    }
+  }, [append]);
+
   const { width: windowWidth = 1920, height: windowHeight = 1080 } =
     useWindowSize();
 

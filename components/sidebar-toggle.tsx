@@ -31,10 +31,10 @@ export function RightSidebarToggle({
   const { toggleSidebar: toggleRightSidebar } = useRightSidebar();
   
   return (
-    <BetterTooltip content="Toggle Notifications" align="start">
+    // <BetterTooltip content="Toggle Notifications" align="start">
       <Button onClick={toggleRightSidebar} variant="outline" className={`p-3 md:h-fit ${className}`}>
         <RouteIcon size={24} />
       </Button>
-    </BetterTooltip>
+    // </BetterTooltip>
   );
 }

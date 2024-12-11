@@ -1,7 +1,7 @@
 export const translations = {
     en: {
         overview: {
-            greeting: "Hello there! Sammie is here.",
+            greeting: "Hello there! Sammi is here.",
             helpText: "How can I help you today?",
         },
         suggestedActions: {
@@ -10,7 +10,7 @@ export const translations = {
     },
     sv: {
         overview: {
-            greeting: "Hej där! Sammie är här.",
+            greeting: "Hej där! Sammi är här.",
             helpText: "Hur kan jag hjälpa dig idag?",
         },
         suggestedActions: {

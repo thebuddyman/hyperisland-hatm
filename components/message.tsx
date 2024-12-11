@@ -46,7 +46,7 @@ export const PreviewMessage = ({
       >
         {message.role === 'assistant' && (
           <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-            <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammie"/>
+            <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammie" />
           </div>
         )}
 
@@ -157,6 +157,12 @@ export const PreviewMessage = ({
 export const ThinkingMessage = () => {
   const role = 'assistant';
 
+  // Randomize hedgehog sounds
+  const getRandomHedgehogSound = () => {
+    const sounds = ['Snuffle-snuffle...', 'Puff-puff...', 'Squeak-squeak...', 'Chirp-chirp...'];
+    return sounds[Math.floor(Math.random() * sounds.length)];
+  };
+
   return (
     <motion.div
       className="w-full mx-auto max-w-3xl px-4 group/message "
@@ -173,12 +179,12 @@ export const ThinkingMessage = () => {
         )}
       >
         <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-        <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammie"/>
+          <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammie" />
         </div>
 
         <div className="flex flex-col gap-2 w-full">
           <div className="flex flex-col gap-4 text-muted-foreground">
-            Snuffle-snuffle...
+            {getRandomHedgehogSound()}
           </div>
         </div>
       </div>
