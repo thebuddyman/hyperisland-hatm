@@ -1,3 +1,5 @@
+import { notifications } from "./data/notifications";
+
 export const translations = {
     en: {
         overview: {
@@ -5,10 +7,18 @@ export const translations = {
             helpText: "How can I help you today?",
         },
         suggestedActions: {
-            seeMore: "See more options"
+            seeMore: "See more options",
+            moreWays: "More ways Sammie can help",
         },
         multiModal: {
             sendMessage: "Send a message..."
+        },
+        notifications:{
+            notificationTitle: "Notifications",
+        },
+        history:{
+            historyToday: "Today",
+            historyYesterday: "Yesterday",
         }
     },
     sv: {
@@ -17,10 +27,18 @@ export const translations = {
             helpText: "Hur kan jag hjälpa dig idag?",
         },
         suggestedActions: {
-            seeMore: "Se fler alternativ"
+            seeMore: "Se fler alternativ",
+            moreWays: "Fler sätt Sammie kan hjälpa till",
         },
         multiModal: {
             sendMessage: "Skriv ett meddelande..."
+        },
+        notifications:{
+            notificationTitle: "Meddelanden",
+        },
+        history:{
+            historyToday: "I dag",
+            historyYesterday: "I går",
         }
     },
 };

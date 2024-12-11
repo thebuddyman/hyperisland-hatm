@@ -2,6 +2,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/components/context/language-context';
+import { getTranslation } from '@/lib/translations';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent } from './ui/sheet';
 import { notifications } from '@/lib/data/notifications';
@@ -13,6 +15,10 @@ export function RightSidebar() {
   const [isMobile, setIsMobile] = useState(false);
   const { isOpen, toggleSidebar } = useRightSidebar();
 
+
+  const { language } = useLanguage();
+
+
   useEffect(() => {
     setIsMounted(true);
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -23,7 +29,7 @@ export function RightSidebar() {
 
   const sidebarContent = (
     <div className="space-y-4 h-full">
-      <span className="text-lg font-semibold">Notifications</span>
+      <span className="text-lg font-semibold">{getTranslation(language, 'notifications.notificationTitle')}</span>
       <div className="space-y-2">
         {notifications.map((notification) => (
           <NotificationCard

@@ -389,7 +389,7 @@ export function SuggestedActionsWithModal({
                     className="h-[100dvh] p-0 flex flex-col"
                 >
                     <SheetHeader className="px-4 py-3 border-b">
-                        <SheetTitle className="text-left">More ways Sammie can help</SheetTitle>
+                        <SheetTitle className="text-left">{getTranslation(language, 'suggestedActions.moreWays')}</SheetTitle>
 
                         <div className="flex gap-2 overflow-x-auto py-2 px-1 -mb-3">
                             {(Object.keys(categories) as Array<keyof typeof categories>).map((category) => (

@@ -1,6 +1,8 @@
 'use client';
 
 import { isToday, isYesterday, subMonths, subWeeks } from 'date-fns';
+import { useLanguage } from '@/components/context/language-context';
+import { getTranslation } from '@/lib/translations';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import type { User } from 'next-auth';
@@ -87,6 +89,7 @@ const ChatItem = ({
 
 export function SidebarHistory({ user }: { user: User | undefined }) {
   const { setOpenMobile } = useSidebar();
+  const { language } = useLanguage();
   const { id } = useParams();
   const pathname = usePathname();
   const {
@@ -145,7 +148,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     return (
       <SidebarGroup>
         <div className="px-2 py-1 text-xs text-sidebar-foreground/50">
-          Today
+        {getTranslation(language, 'history.historyToday')}
         </div>
         <SidebarGroupContent>
           <div className="flex flex-col">
@@ -231,7 +234,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.today.length > 0 && (
                       <>
                         <div className="px-2 py-1 text-xs text-sidebar-foreground/50">
-                          Today
+                        {getTranslation(language, 'history.historyToday')}
                         </div>
                         {groupedChats.today.map((chat) => (
                           <ChatItem
@@ -251,7 +254,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.yesterday.length > 0 && (
                       <>
                         <div className="px-2 py-1 text-xs text-sidebar-foreground/50 mt-6">
-                          Yesterday
+                        {getTranslation(language, 'history.historyYesterday')}
                         </div>
                         {groupedChats.yesterday.map((chat) => (
                           <ChatItem
