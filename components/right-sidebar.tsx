@@ -10,6 +10,10 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { createNewChat } from '@/app/(chat)/actions';
 
+import { notifications } from '@/lib/data/notifications';
+import NotificationCard from './notifications/notification-card';
+
+
 export function RightSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -110,6 +114,14 @@ export function RightSidebar() {
   const sidebarContent = (
     <div className="space-y-4 h-full">
       <span className="text-lg font-semibold">Notifications</span>
+      <div className="space-y-2">
+        {notifications.map((notification) => (
+          <NotificationCard
+            key={notification.id}
+            notification={notification}
+          />
+        ))}
+      </div>
       {/* {toolboxActions.map((action, index) => (
         <motion.div
           key={index}
@@ -156,7 +168,7 @@ export function RightSidebar() {
 
   return isMobile ? (
     <>
-      <div className="top-[10px] right-4 z-50">
+      <div className="absolute top-[8px] right-2 z-50">
         <BetterTooltip content="Toggle Notifications" align="start">
           <Button onClick={toggleSidebar} variant="outline" className="md:px-2 md:h-fit">
             <RouteIcon size={24} />

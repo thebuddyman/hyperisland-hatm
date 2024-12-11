@@ -24,124 +24,253 @@ const extendedSuggestedActions = [
         title: '👋 Greeting Practice',
         label: 'Practice workplace greetings and introductions',
         action: 'Can we practice how to greet colleagues and introduce myself professionally?',
-        category: 'learning'
+        category: 'learning',
+        context: `Guide this role-play scenario with sensitivity. Remember to:
+            - Start with simple, common greetings in Swedish and English
+            - Provide clear examples of appropriate greetings and responses
+            - Include timing (morning, afternoon, leaving) variations
+            - Teach appropriate personal space and body language
+            - Give positive reinforcement for each attempt
+            - Offer alternatives for those who are anxious
+            - Practice both initiating and responding to greetings`
     },
     {
         title: '🤝 Asking for Help',
         label: 'Learn how to politely ask for assistance',
         action: 'I\'d like to practice how to ask for help politely when I need it.',
-        category: 'learning'
+        category: 'learning',
+        context: `Guide through help-seeking scenarios:
+            - Emphasize that asking for help is normal and encouraged
+            - Provide simple, polite phrases in both Swedish and English
+            - Practice identifying when to ask for help
+            - Include examples for different situations (task help, directions, clarification)
+            - Show how to explain what help is needed clearly
+            - Discuss appropriate timing for asking help
+            - Include strategies for when feeling overwhelmed`
     },
     {
         title: '🏢 About Samhall',
         label: 'Learn about Samhall\'s mission and values',
         action: 'Can you tell me about Samhall\'s mission, values, and what makes it special?',
-        category: 'info'
+        category: 'info',
+        context: `Present Samhall information accessibly:
+            - Explain mission and values in simple terms
+            - Focus on inclusion and growth opportunities
+            - Share relevant success stories
+            - Highlight available support systems
+            - Explain how values connect to daily work
+            - Include information about workplace culture
+            - Emphasize the supportive environment`
     },
     {
         title: '📋 My Training Program',
         label: 'Understand your role and daily routines',
         action: 'Can you explain my training program, what I\'ll be doing day-to-day, and how I\'ll develop my skills?',
-        category: 'learning'
+        category: 'learning',
+        context: `Break down the training program clearly:
+            - Explain the step-by-step training process
+            - Describe typical daily activities
+            - Highlight key skills they'll develop
+            - Include practice opportunities
+            - Address common concerns
+            - Emphasize self-paced learning
+            - Mention available support during training`
+    },
+    {
+        title: '🗺️ Finding My Way',
+        label: 'Help with finding important places at work',
+        action: 'Where can I find important places like the lunchroom, quiet spaces, and restrooms?',
+        category: 'daily',
+        context: `Provide clear navigation guidance:
+            - Use simple, step-by-step directions
+            - Include easy-to-identify landmarks
+            - Explain locations of essential facilities
+            - Point out quiet spaces for breaks
+            - Note accessible routes and entrances
+            - Mention emergency exits
+            - Identify spaces for sensory breaks`
+    },
+    {
+        title: '📝 Task Reflection',
+        label: 'Review and learn from your work tasks',
+        action: 'I\'d like to reflect on my tasks today - what went well and what was challenging.',
+        category: 'wellbeing',
+        context: `Guide reflection with empathy:
+            - Ask specific but gentle questions
+            - Celebrate small wins
+            - Address challenges supportively
+            - Help identify learning opportunities
+            - Provide positive reinforcement
+            - Suggest coping strategies
+            - Focus on personal growth`
     },
     {
         title: '🤝 Support & Resources',
         label: 'Learn about available help and support',
         action: 'What kind of support and resources are available to me as a Samhall employee?',
-        category: 'help'
+        category: 'help',
+        context: `Present support information clearly:
+            - List available support personnel and their roles
+            - Explain how to access different types of support
+            - Describe workplace accommodations available
+            - Include both immediate and long-term support options
+            - Mention peer support programs
+            - Outline mental health resources
+            - Explain confidentiality in seeking support`
     },
     {
         title: '🗣️ Communication Skills',
         label: 'Practice effective workplace communication',
         action: 'Help me improve my workplace communication skills',
-        category: 'learning'
+        category: 'learning',
+        context: `Guide communication practice:
+            - Focus on clear, simple communication methods
+            - Practice common workplace conversations
+            - Include both verbal and written communication
+            - Teach active listening techniques
+            - Provide strategies for difficult conversations
+            - Include non-verbal communication tips
+            - Practice asking for clarification`
     },
     {
         title: '⚡ Workplace Safety',
         label: 'Learn about safety protocols and procedures',
         action: 'What are the important safety guidelines I need to follow at Samhall?',
-        category: 'daily'
+        category: 'daily',
+        context: `Explain safety guidelines clearly:
+            - Break down essential safety rules
+            - Describe proper use of equipment
+            - Explain emergency procedures
+            - Include personal safety practices
+            - Cover hygiene and health protocols
+            - Identify potential hazards
+            - Emphasize when to ask for help`
     },
     {
         title: '📅 Time Management',
         label: 'Tips for managing work schedules',
         action: 'Can you help me with strategies for managing my work schedule effectively?',
-        category: 'daily'
+        category: 'daily',
+        context: `Share time management strategies:
+            - Provide simple scheduling techniques
+            - Break down daily routines
+            - Offer tools for tracking tasks
+            - Include break management tips
+            - Suggest ways to handle transitions
+            - Help with prioritization
+            - Address common time challenges`
     },
     {
         title: '😌 Stress Management',
         label: 'Learn techniques to stay calm and focused',
         action: 'Can you help me with ways to manage stress at work?',
-        category: 'wellbeing'
+        category: 'wellbeing',
+        context: `Guide stress management supportively:
+            - Share simple calming techniques
+            - Identify stress triggers
+            - Teach quick relaxation exercises
+            - Explain when to take breaks
+            - Include grounding techniques
+            - Suggest preventive strategies
+            - Provide crisis resources`
     },
     {
         title: '🌟 Career Growth',
         label: 'Explore development opportunities',
         action: 'What career development opportunities are available at Samhall?',
-        category: 'info'
+        category: 'info',
+        context: `Present career information encouragingly:
+            - Outline available development paths
+            - Explain skill-building opportunities
+            - Share success stories
+            - Describe training programs
+            - Include mentorship options
+            - Discuss goal setting
+            - Emphasize personal growth`
     },
     {
         title: '👥 Teamwork',
         label: 'Learn about working with colleagues',
         action: 'How can I be a good team member at Samhall?',
-        category: 'daily'
-    },
-
-    // Navigation & Facilities
-    {
-        title: '🗺️ Finding My Way',
-        label: 'Help with finding important places at work',
-        action: 'Where can I find important places like the lunchroom, quiet spaces, and restrooms?',
-        category: 'daily'
+        category: 'daily',
+        context: `Guide teamwork skills development:
+            - Explain team roles and dynamics
+            - Practice collaboration scenarios
+            - Share cooperation techniques
+            - Include conflict resolution tips
+            - Emphasize respect and inclusion
+            - Discuss team communication
+            - Address common challenges`
     },
     {
         title: '💻 Using Work Systems',
         label: 'Learn how to use work platforms and tools',
         action: 'Can you help me understand how to use the onboarding platform and other work systems?',
-        category: 'daily'
+        category: 'daily',
+        context: `Guide through systems with patience:
+            - Break down each system step-by-step
+            - Explain common functions first
+            - Include troubleshooting tips
+            - Offer practice exercises
+            - Address common mistakes
+            - Explain where to find help
+            - Emphasize learning at own pace`
     },
-
-    // Daily Routine
     {
         title: '⏰ Morning Schedule',
         label: 'Understanding start times and morning routine',
         action: 'What time should I arrive in the morning and what should my morning routine look like?',
-        category: 'daily'
+        category: 'daily',
+        context: `Explain morning routine clearly:
+            - Break down arrival times
+            - List preparation steps
+            - Include transport planning
+            - Suggest evening preparation
+            - Address common concerns
+            - Include flexibility options
+            - Explain check-in procedures`
     },
     {
         title: '🎒 Daily Preparation',
         label: 'What to bring and how to prepare',
         action: 'What do I need to bring with me to work each day?',
-        category: 'daily'
-    },
-
-    // Reflection Tools
-    {
-        title: '📝 Task Reflection',
-        label: 'Review and learn from your work tasks',
-        action: 'I\'d like to reflect on my tasks today - what went well and what was challenging.',
-        category: 'wellbeing'
+        category: 'daily',
+        context: `Guide daily preparation thoroughly:
+            - Provide complete checklist
+            - Explain essential items
+            - Include seasonal considerations
+            - Suggest organization tips
+            - Address special needs items
+            - Include backup planning
+            - Mention storage options`
     },
     {
         title: '🌱 Progress Check-in',
         label: 'Celebrate achievements and set goals',
         action: 'Let\'s talk about what I\'ve accomplished this week and what I\'m proud of.',
-        category: 'wellbeing'
+        category: 'wellbeing',
+        context: `Guide achievement reflection positively:
+            - Celebrate all progress sizes
+            - Ask about specific accomplishments
+            - Help identify growth areas
+            - Set achievable goals
+            - Provide encouragement
+            - Acknowledge challenges overcome
+            - Build confidence through reflection`
     },
-    {
-        title: '🎯 Skill Development',
-        label: 'Identify strengths and areas for practice',
-        action: 'Can we discuss which tasks I handled well and what I\'d like to practice more?',
-        category: 'learning'
-    },
-
-    // Social Skills Practice
-    
     {
         title: '🎯 Focus Skills',
         label: 'Managing distractions and staying focused',
         action: 'Can you help me learn strategies for staying focused when there are distractions?',
-        category: 'wellbeing'
+        category: 'wellbeing',
+        context: `Share focus strategies supportively:
+            - Provide practical concentration techniques
+            - Identify common distractions
+            - Suggest environment adjustments
+            - Include break scheduling
+            - Teach refocusing methods
+            - Address sensory challenges
+            - Offer coping strategies`
     }
 ];
 
@@ -171,10 +300,12 @@ export function SuggestedActionsWithModal({
                 variant="ghost"
                 onClick={async () => {
                     window.history.replaceState({}, '', `/chat/${chatId}`);
-                    setIsOpen(false);  // Close sheet after selection
+                    setIsOpen(false);
                     append({
                         role: 'user',
                         content: action.action,
+                        // Include context for AI processing
+                        systemMessage: action.context
                     });
                 }}
                 className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 flex-col w-full h-auto justify-start items-start"
