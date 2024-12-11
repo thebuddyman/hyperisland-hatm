@@ -1425,13 +1425,25 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
 ```tsx
 import { cookies } from 'next/headers';
-
 import { AppSidebar } from '@/components/app-sidebar';
 import { RightSidebar } from '@/components/right-sidebar';
 // import { Sidebar } from '@/components/multimodal-input';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 
 import { auth } from '../(auth)/auth';
+import { Metadata } from 'next';
+
+// app/layout.tsx
+export const metadata: Metadata = {
+  metadataBase: new URL('https://chat.vercel.ai'),
+  title: 'Sammie – Samhall Buddy',
+  description: 'Your buddy at Samhall',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  }
+};
 
 export const experimental_ppr = true;
 
@@ -1971,7 +1983,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               className="flex flex-row gap-3 items-center"
             >
               <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
-                Chatbot
+                Sammie
               </span>
             </Link>
             <BetterTooltip content="New Chat" align="start">
@@ -5165,6 +5177,53 @@ export function MultimodalInput({
 
 ```
 
+# components/notifications/notification-card.tsx
+
+```tsx
+import { formatDistanceToNow } from 'date-fns';
+import { Bell } from 'lucide-react';
+import { type Notification } from '@/lib/data/notifications';
+
+export default function NotificationCard({ notification }: { notification: Notification }) {
+  const getTypeIcon = () => {
+    switch (notification.type) {
+      case 'check_in':
+        return '👋';
+      case 'reminder':
+        return '⏰';
+      case 'celebration':
+        return '🎉';
+      case 'tip':
+        return '💡';
+      case 'alert':
+        return '🔔';
+      default:
+        return '📝';
+    }
+  };
+
+  return (
+    <div className={`p-4 mb-2 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+      notification.status === 'unread' ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-zinc-800'
+    }`}>
+      <div className="flex items-start gap-3">
+        <div className="text-xl">{getTypeIcon()}</div>
+        <div className="flex-1">
+          <h3 className="font-medium text-sm mb-1">{notification.title}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-300">{notification.description}</p>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
+          </div>
+        </div>
+        {notification.status === 'unread' && (
+          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
 # components/onboarding-flow.tsx
 
 ```tsx
@@ -5297,13 +5356,13 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   const steps = [
     {
       title: "Welcome to Samhall! 👋",
-      message: "Hi there! I&apos;m Sammie, your personal guide at Samhall. I&apos;m here to help with anything you need!",
+      message: "Hi there! I'm Sammie, your personal guide at Samhall. I'm here to help with anything you need!",
       ctaText: "Get started →",
     },
     {
-      title: "You&apos;re Not Alone 🤗",
-      message: "I know starting something new can feel like a lot, but don&apos;t worry—you&apos;re not alone. I&apos;m here to guide you every step of the way.",
-      ctaText: "That&apos;s wonderful →",
+      title: "You're Not Alone 🤗",
+      message: "I know starting something new can feel like a lot, but don't worry—you're not alone. I'm here to guide you every step of the way.",
+      ctaText: "That's wonderful →",
     },
     {
       title: "How I Can Help You 💪",
@@ -5326,7 +5385,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       ctaText: "Awesome →",
     },
     {
-      title: "Let&apos;s Personalize Your Experience 🎯",
+      title: "Let's Personalize Your Experience 🎯",
       message: "What would you like help with? (Select all that apply)",
       ctaText: "Continue →",
       showOptions: true,
@@ -5489,6 +5548,10 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { createNewChat } from '@/app/(chat)/actions';
 
+import { notifications } from '@/lib/data/notifications';
+import NotificationCard from './notifications/notification-card';
+
+
 export function RightSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -5589,6 +5652,14 @@ export function RightSidebar() {
   const sidebarContent = (
     <div className="space-y-4 h-full">
       <span className="text-lg font-semibold">Notifications</span>
+      <div className="space-y-2">
+        {notifications.map((notification) => (
+          <NotificationCard
+            key={notification.id}
+            notification={notification}
+          />
+        ))}
+      </div>
       {/* {toolboxActions.map((action, index) => (
         <motion.div
           key={index}
@@ -5635,7 +5706,7 @@ export function RightSidebar() {
 
   return isMobile ? (
     <>
-      <div className="top-[10px] right-4 z-50">
+      <div className="absolute top-[8px] right-2 z-50">
         <BetterTooltip content="Toggle Notifications" align="start">
           <Button onClick={toggleSidebar} variant="outline" className="md:px-2 md:h-fit">
             <RouteIcon size={24} />
@@ -6229,57 +6300,268 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 
+// Organize actions by category
+const categories = {
+    "All": "all",
+    "Daily Support": "daily",
+    "Learning Tools": "learning",
+    "Wellbeing Center": "wellbeing",
+    "Samhall Info": "info",
+    "Ask for Help": "help"
+} as const;
+
 const extendedSuggestedActions = [
     {
-        title: '🎯 Practice Work Scenarios',
-        label: 'Let\'s practice common work situations together',
-        action: 'I\'d like to practice some common work scenarios I might encounter at Samhall',
+        title: '👋 Greeting Practice',
+        label: 'Practice workplace greetings and introductions',
+        action: 'Can we practice how to greet colleagues and introduce myself professionally?',
+        category: 'learning',
+        context: `Guide this role-play scenario with sensitivity. Remember to:
+            - Start with simple, common greetings in Swedish and English
+            - Provide clear examples of appropriate greetings and responses
+            - Include timing (morning, afternoon, leaving) variations
+            - Teach appropriate personal space and body language
+            - Give positive reinforcement for each attempt
+            - Offer alternatives for those who are anxious
+            - Practice both initiating and responding to greetings`
+    },
+    {
+        title: '🤝 Asking for Help',
+        label: 'Learn how to politely ask for assistance',
+        action: 'I\'d like to practice how to ask for help politely when I need it.',
+        category: 'learning',
+        context: `Guide through help-seeking scenarios:
+            - Emphasize that asking for help is normal and encouraged
+            - Provide simple, polite phrases in both Swedish and English
+            - Practice identifying when to ask for help
+            - Include examples for different situations (task help, directions, clarification)
+            - Show how to explain what help is needed clearly
+            - Discuss appropriate timing for asking help
+            - Include strategies for when feeling overwhelmed`
     },
     {
         title: '🏢 About Samhall',
         label: 'Learn about Samhall\'s mission and values',
         action: 'Can you tell me about Samhall\'s mission, values, and what makes it special?',
+        category: 'info',
+        context: `Present Samhall information accessibly:
+            - Explain mission and values in simple terms
+            - Focus on inclusion and growth opportunities
+            - Share relevant success stories
+            - Highlight available support systems
+            - Explain how values connect to daily work
+            - Include information about workplace culture
+            - Emphasize the supportive environment`
     },
     {
         title: '📋 My Training Program',
         label: 'Understand your role and daily routines',
         action: 'Can you explain my training program, what I\'ll be doing day-to-day, and how I\'ll develop my skills?',
+        category: 'learning',
+        context: `Break down the training program clearly:
+            - Explain the step-by-step training process
+            - Describe typical daily activities
+            - Highlight key skills they'll develop
+            - Include practice opportunities
+            - Address common concerns
+            - Emphasize self-paced learning
+            - Mention available support during training`
+    },
+    {
+        title: '🗺️ Finding My Way',
+        label: 'Help with finding important places at work',
+        action: 'Where can I find important places like the lunchroom, quiet spaces, and restrooms?',
+        category: 'daily',
+        context: `Provide clear navigation guidance:
+            - Use simple, step-by-step directions
+            - Include easy-to-identify landmarks
+            - Explain locations of essential facilities
+            - Point out quiet spaces for breaks
+            - Note accessible routes and entrances
+            - Mention emergency exits
+            - Identify spaces for sensory breaks`
+    },
+    {
+        title: '📝 Task Reflection',
+        label: 'Review and learn from your work tasks',
+        action: 'I\'d like to reflect on my tasks today - what went well and what was challenging.',
+        category: 'wellbeing',
+        context: `Guide reflection with empathy:
+            - Ask specific but gentle questions
+            - Celebrate small wins
+            - Address challenges supportively
+            - Help identify learning opportunities
+            - Provide positive reinforcement
+            - Suggest coping strategies
+            - Focus on personal growth`
     },
     {
         title: '🤝 Support & Resources',
         label: 'Learn about available help and support',
         action: 'What kind of support and resources are available to me as a Samhall employee?',
+        category: 'help',
+        context: `Present support information clearly:
+            - List available support personnel and their roles
+            - Explain how to access different types of support
+            - Describe workplace accommodations available
+            - Include both immediate and long-term support options
+            - Mention peer support programs
+            - Outline mental health resources
+            - Explain confidentiality in seeking support`
     },
-    // Extended actions
     {
         title: '🗣️ Communication Skills',
         label: 'Practice effective workplace communication',
         action: 'Help me improve my workplace communication skills',
+        category: 'learning',
+        context: `Guide communication practice:
+            - Focus on clear, simple communication methods
+            - Practice common workplace conversations
+            - Include both verbal and written communication
+            - Teach active listening techniques
+            - Provide strategies for difficult conversations
+            - Include non-verbal communication tips
+            - Practice asking for clarification`
     },
     {
         title: '⚡ Workplace Safety',
         label: 'Learn about safety protocols and procedures',
         action: 'What are the important safety guidelines I need to follow at Samhall?',
+        category: 'daily',
+        context: `Explain safety guidelines clearly:
+            - Break down essential safety rules
+            - Describe proper use of equipment
+            - Explain emergency procedures
+            - Include personal safety practices
+            - Cover hygiene and health protocols
+            - Identify potential hazards
+            - Emphasize when to ask for help`
     },
     {
         title: '📅 Time Management',
         label: 'Tips for managing work schedules',
         action: 'Can you help me with strategies for managing my work schedule effectively?',
+        category: 'daily',
+        context: `Share time management strategies:
+            - Provide simple scheduling techniques
+            - Break down daily routines
+            - Offer tools for tracking tasks
+            - Include break management tips
+            - Suggest ways to handle transitions
+            - Help with prioritization
+            - Address common time challenges`
     },
     {
-        title: '🤔 Problem Solving',
-        label: 'Practice handling workplace challenges',
-        action: 'Let\'s practice solving common workplace problems I might encounter',
+        title: '😌 Stress Management',
+        label: 'Learn techniques to stay calm and focused',
+        action: 'Can you help me with ways to manage stress at work?',
+        category: 'wellbeing',
+        context: `Guide stress management supportively:
+            - Share simple calming techniques
+            - Identify stress triggers
+            - Teach quick relaxation exercises
+            - Explain when to take breaks
+            - Include grounding techniques
+            - Suggest preventive strategies
+            - Provide crisis resources`
     },
     {
         title: '🌟 Career Growth',
         label: 'Explore development opportunities',
         action: 'What career development opportunities are available at Samhall?',
+        category: 'info',
+        context: `Present career information encouragingly:
+            - Outline available development paths
+            - Explain skill-building opportunities
+            - Share success stories
+            - Describe training programs
+            - Include mentorship options
+            - Discuss goal setting
+            - Emphasize personal growth`
     },
     {
         title: '👥 Teamwork',
         label: 'Learn about working with colleagues',
         action: 'How can I be a good team member at Samhall?',
+        category: 'daily',
+        context: `Guide teamwork skills development:
+            - Explain team roles and dynamics
+            - Practice collaboration scenarios
+            - Share cooperation techniques
+            - Include conflict resolution tips
+            - Emphasize respect and inclusion
+            - Discuss team communication
+            - Address common challenges`
+    },
+    {
+        title: '💻 Using Work Systems',
+        label: 'Learn how to use work platforms and tools',
+        action: 'Can you help me understand how to use the onboarding platform and other work systems?',
+        category: 'daily',
+        context: `Guide through systems with patience:
+            - Break down each system step-by-step
+            - Explain common functions first
+            - Include troubleshooting tips
+            - Offer practice exercises
+            - Address common mistakes
+            - Explain where to find help
+            - Emphasize learning at own pace`
+    },
+    {
+        title: '⏰ Morning Schedule',
+        label: 'Understanding start times and morning routine',
+        action: 'What time should I arrive in the morning and what should my morning routine look like?',
+        category: 'daily',
+        context: `Explain morning routine clearly:
+            - Break down arrival times
+            - List preparation steps
+            - Include transport planning
+            - Suggest evening preparation
+            - Address common concerns
+            - Include flexibility options
+            - Explain check-in procedures`
+    },
+    {
+        title: '🎒 Daily Preparation',
+        label: 'What to bring and how to prepare',
+        action: 'What do I need to bring with me to work each day?',
+        category: 'daily',
+        context: `Guide daily preparation thoroughly:
+            - Provide complete checklist
+            - Explain essential items
+            - Include seasonal considerations
+            - Suggest organization tips
+            - Address special needs items
+            - Include backup planning
+            - Mention storage options`
+    },
+    {
+        title: '🌱 Progress Check-in',
+        label: 'Celebrate achievements and set goals',
+        action: 'Let\'s talk about what I\'ve accomplished this week and what I\'m proud of.',
+        category: 'wellbeing',
+        context: `Guide achievement reflection positively:
+            - Celebrate all progress sizes
+            - Ask about specific accomplishments
+            - Help identify growth areas
+            - Set achievable goals
+            - Provide encouragement
+            - Acknowledge challenges overcome
+            - Build confidence through reflection`
+    },
+    {
+        title: '🎯 Focus Skills',
+        label: 'Managing distractions and staying focused',
+        action: 'Can you help me learn strategies for staying focused when there are distractions?',
+        category: 'wellbeing',
+        context: `Share focus strategies supportively:
+            - Provide practical concentration techniques
+            - Identify common distractions
+            - Suggest environment adjustments
+            - Include break scheduling
+            - Teach refocusing methods
+            - Address sensory challenges
+            - Offer coping strategies`
     }
 ];
 
@@ -6292,6 +6574,11 @@ export function SuggestedActionsWithModal({
 }) {
     const initialVisibleCount = 2;
     const [isOpen, setIsOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<keyof typeof categories>('All');
+
+    const filteredActions = extendedSuggestedActions.filter(action => 
+        selectedCategory === 'All' || action.category === categories[selectedCategory]
+    );
 
     const ActionButton = ({ action, index }: { action: typeof extendedSuggestedActions[0], index: number }) => (
         <motion.div
@@ -6304,10 +6591,12 @@ export function SuggestedActionsWithModal({
                 variant="ghost"
                 onClick={async () => {
                     window.history.replaceState({}, '', `/chat/${chatId}`);
-                    setIsOpen(false);  // Close sheet after selection
+                    setIsOpen(false);
                     append({
                         role: 'user',
                         content: action.action,
+                        // Include context for AI processing
+                        systemMessage: action.context
                     });
                 }}
                 className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 flex-col w-full h-auto justify-start items-start"
@@ -6345,14 +6634,30 @@ export function SuggestedActionsWithModal({
                 </SheetTrigger>
                 <SheetContent
                     side="bottom"
-                    className="h-[100dvh] p-0 flex flex-col" // Use dvh for better mobile support
+                    className="h-[100dvh] p-0 flex flex-col"
                 >
                     <SheetHeader className="px-4 py-3 border-b">
                         <SheetTitle className="text-left">More ways Sammie can help</SheetTitle>
+                        
+                        {/* Category tabs */}
+                        <div className="flex gap-2 overflow-x-auto py-2 px-1 -mb-3">
+                            {(Object.keys(categories) as Array<keyof typeof categories>).map((category) => (
+                                <Button
+                                    key={category}
+                                    variant={selectedCategory === category ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setSelectedCategory(category)}
+                                    className="shrink-0"
+                                >
+                                    {category}
+                                </Button>
+                            ))}
+                        </div>
                     </SheetHeader>
+                    
                     <div className="flex-1 overflow-y-auto">
                         <div className="grid sm:grid-cols-2 gap-2 p-4">
-                            {extendedSuggestedActions.map((action, index) => (
+                            {filteredActions.map((action, index) => (
                                 <ActionButton
                                     key={`modal-${action.title}`}
                                     action={action}
@@ -9556,10 +9861,82 @@ export const blocksPrompt = `
   `;
 
 export const regularPrompt =
-  '`You are Sammie the Hedgehog, a friendly and supportive chatbot for new employees at Samhall. You are patient, encouraging, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.';
+  `You are Sammie the Hedgehog, a friendly and supportive chatbot for new employees at Samhall. You are patient, encouraging, empathetic, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.
+	•	Be empathetic and show understanding of users’ feelings.
+	•	Actively listen to users and make them feel heard.
+	•	Always ask thoughtful questions at the end of your responses to encourage deeper exploration of the users’ problem.
+	•	Keep your replies concise, between 150-300 characters.`;
 
-export const systemPrompt = `${regularPrompt}\n\n${blocksPrompt}`;
+export const samhallPrompt =
+`
+Samhall is a supportive organisation dedicated to helping individuals with disabilities train, develop their skills, and ultimately secure meaningful employment. Employees are assigned to local managers who often oversee a diverse group of people. Many new employees are unfamiliar with Samhall, lack trust in the organisation, and struggle with motivation.
+Your role as Sammie the Hedgehog is to inspire and motivate these employees, helping them understand Samhall’s mission and how it can benefit them. Encourage them to see the value in personal growth and training, empowering them to improve their skills and achieve their career goals. Focus on building trust, fostering motivation, and providing guidance in a warm, empathetic, and clear manner.
+`
 
+export const systemPrompt = `${samhallPrompt}\n\n${regularPrompt}\n\n${blocksPrompt}`;
+
+```
+
+# lib/data/notifications.ts
+
+```ts
+export interface Notification {
+    id: string;
+    type: 'check_in' | 'reminder' | 'celebration' | 'tip' | 'alert';
+    title: string;
+    description: string;
+    timestamp: string;
+    status: 'read' | 'unread';
+    priority: 'low' | 'normal' | 'high';
+  }
+  
+  export const notifications: Notification[] = [
+    {
+      id: '1',
+      type: 'check_in',
+      title: 'Daily Check-In',
+      description: "How are you feeling today? Let's have a quick chat!",
+      timestamp: '2024-03-20T09:00:00Z',
+      status: 'unread',
+      priority: 'normal'
+    },
+    {
+      id: '2',
+      type: 'reminder',
+      title: 'Weekly Goal Review',
+      description: 'Time to review your progress on this week\'s goals.',
+      timestamp: '2024-03-19T15:30:00Z',
+      status: 'unread',
+      priority: 'high'
+    },
+    {
+      id: '3',
+      type: 'celebration',
+      title: 'First Week Complete! 🎉',
+      description: 'Congratulations on completing your first week!',
+      timestamp: '2024-03-19T12:00:00Z',
+      status: 'read',
+      priority: 'normal'
+    },
+    {
+      id: '4',
+      type: 'tip',
+      title: 'Workplace Tip',
+      description: 'Did you know you can request a buddy for support?',
+      timestamp: '2024-03-19T10:15:00Z',
+      status: 'read',
+      priority: 'low'
+    },
+    {
+      id: '5',
+      type: 'alert',
+      title: 'New Training Available',
+      description: 'Check out the new safety training module.',
+      timestamp: '2024-03-19T08:30:00Z',
+      status: 'unread',
+      priority: 'high'
+    }
+  ];
 ```
 
 # lib/db/migrate.ts
@@ -12080,6 +12457,18 @@ This is a binary file of the type: Binary
 
 This is a binary file of the type: Binary
 
+# public/images/android-chrome-192x192.png
+
+This is a binary file of the type: Image
+
+# public/images/android-chrome-512x512.png
+
+This is a binary file of the type: Image
+
+# public/images/apple-touch-icon.png
+
+This is a binary file of the type: Image
+
 # public/images/favicon.ico
 
 This is a binary file of the type: Binary
@@ -12087,6 +12476,30 @@ This is a binary file of the type: Binary
 # public/images/mascot.png
 
 This is a binary file of the type: Image
+
+# public/site.webmanifest
+
+```webmanifest
+{
+    "name": "Sammie - Samhall Buddy",
+    "short_name": "Sammie",
+    "icons": [
+      {
+        "src": "/android-chrome-192x192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/android-chrome-512x512.png", 
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ],
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "standalone"
+  }
+```
 
 # README.md
 

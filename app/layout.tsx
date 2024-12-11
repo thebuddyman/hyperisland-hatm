@@ -9,10 +9,37 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://chat.vercel.ai'),
   title: 'Sammie – Samhall Buddy',
   description: 'Your buddy at Samhall',
+  manifest: '/site.webmanifest',
+  icons: {
+    icon: '/images/favicon.ico',
+    shortcut: '/images/favicon.ico',
+    apple: '/images/apple-touch-icon.png',
+    other: [
+      {
+        rel: 'apple-touch-icon',
+        url: '/images/apple-touch-icon.png',
+      },
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '32x32',
+        url: '/images/android-chrome-192x192.png',
+      },
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '16x16',
+        url: '/images/android-chrome-512x512.png',
+      },
+    ],
+  },
 };
 
+
 export const viewport = {
+  themeColor: '#ffffff',
   maximumScale: 1, // Disable auto-zoom on mobile Safari
+  viewport: 'width=device-width, initial-scale=1, user-scalable=no',
 };
 
 const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
@@ -55,6 +82,16 @@ export default async function RootLayout({
             __html: THEME_COLOR_SCRIPT,
           }}
         />
+        <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/images/android-chrome-192x192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/images/android-chrome-512x512.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="apple-mobile-web-app-title" content="Sammie" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="application-name" content="Sammie" />
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="antialiased">
         <ThemeProvider
