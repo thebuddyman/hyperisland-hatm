@@ -42,7 +42,7 @@ export async function saveLanguage(language: string) {
 
 export async function createFirstTimeChat({ userId }: { userId: string }) {
   const id = generateUUID();
-  const title = "Welcome to Sammie!";
+  const title = "Welcome to Sammi!";
   
   await saveChat({ id, userId, title });
   

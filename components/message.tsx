@@ -46,7 +46,7 @@ export const PreviewMessage = ({
       >
         {message.role === 'assistant' && (
           <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-            <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammie" />
+            <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammi" />
           </div>
         )}
 
@@ -179,7 +179,7 @@ export const ThinkingMessage = () => {
         )}
       >
         <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-          <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammie" />
+          <Image className="rounded-full" src="/images/mascot.png" width={32} height={32} alt="Mascot - Sammi" />
         </div>
 
         <div className="flex flex-col gap-2 w-full">

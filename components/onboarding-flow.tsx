@@ -127,7 +127,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   const steps = [
     {
       title: "Welcome to Samhall! 👋",
-      message: "Hi there! I'm Sammie, your personal guide at Samhall. I'm here to help with anything you need!",
+      message: "Hi there! I'm Sammi, your personal guide at Samhall. I'm here to help with anything you need!",
       ctaText: "Get started →",
     },
     {
