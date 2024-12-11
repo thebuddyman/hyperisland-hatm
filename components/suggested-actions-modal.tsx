@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useLanguage } from '@/components/context/language-context';
+import { getTranslation } from '@/lib/translations';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -285,6 +287,8 @@ export function SuggestedActionsWithModal({
     const [isOpen, setIsOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<keyof typeof categories>('All');
 
+    const { language } = useLanguage(); // Get current language
+
     const filteredActions = extendedSuggestedActions.filter(action => 
         selectedCategory === 'All' || action.category === categories[selectedCategory]
     );
@@ -338,7 +342,7 @@ export function SuggestedActionsWithModal({
                         variant="outline"
                         className="w-full mt-2"
                     >
-                        See more options
+                        {getTranslation(language, 'suggestedActions.seeMore')}
                     </Button>
                 </SheetTrigger>
                 <SheetContent

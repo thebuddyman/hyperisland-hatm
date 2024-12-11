@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Toaster } from 'sonner';
 
 import { ThemeProvider } from '@/components/theme-provider';
+import { LanguageProvider } from '../components/context/language-context'; // Import the LanguageProvider
+
 
 import './globals.css';
 
@@ -85,7 +87,7 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/images/android-chrome-192x192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/images/android-chrome-512x512.png" />
-        <link rel="manifest" href="/site.webmanifest" />
+        {/* <link rel="manifest" href="/site.webmanifest" /> */}
         <meta name="apple-mobile-web-app-title" content="Sammie" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -100,8 +102,10 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Toaster position="top-center" />
-          {children}
+          <LanguageProvider> {/* Wrap children with LanguageProvider */}
+            <Toaster position="top-center" />
+            {children}
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

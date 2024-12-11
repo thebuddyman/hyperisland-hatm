@@ -567,6 +567,14 @@ export async function generateTitleFromUserMessage({
   return title;
 }
 
+export async function saveLanguage(language: string) {
+  const cookieStore = await cookies();
+  cookieStore.set('selected-language', language, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+  });
+}
+
 export async function createFirstTimeChat({ userId }: { userId: string }) {
   const id = generateUUID();
   const title = "Welcome to Sammie!";
@@ -651,7 +659,7 @@ export async function useTool() {
   return id;
 }
 
-export async function handleUserNameSubmission(name: string, chatId: string) {
+export async function handleUserNameSubmission(name: string, chatId: string, language: string = 'en') {
   const { text: responseMessage } = await generateText({
     model: customModel('gpt-4o-mini'),
     system: welcomePrompt,
@@ -685,7 +693,8 @@ import { z } from 'zod';
 import { auth } from '@/app/(auth)/auth';
 import { customModel } from '@/lib/ai';
 import { models } from '@/lib/ai/models';
-import { systemPrompt } from '@/lib/ai/prompts';
+// import { systemPrompt } from '@/lib/ai/prompts';
+import { getSystemPrompt } from '@/lib/ai/prompts';
 import {
   deleteChatById,
   getChatById,
@@ -727,7 +736,8 @@ export async function POST(request: Request) {
     id,
     messages,
     modelId,
-  }: { id: string; messages: Array<Message>; modelId: string } =
+    language = 'en'  // Add language with English default
+  }: { id: string; messages: Array<Message>; modelId: string; language?: string;  } =
     await request.json();
 
   const session = await auth();
@@ -766,7 +776,8 @@ export async function POST(request: Request) {
 
   const result = await streamText({
     model: customModel(model.apiIdentifier),
-    system: systemPrompt,
+    // system: systemPrompt,
+    system: getSystemPrompt(language), // Pass the selected language
     messages: coreMessages,
     maxSteps: 5,
     experimental_activeTools: allTools,
@@ -1421,6 +1432,12 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
 ```
 
+# app/(chat)/layout-client.tsx
+
+```tsx
+
+```
+
 # app/(chat)/layout.tsx
 
 ```tsx
@@ -1431,19 +1448,6 @@ import { RightSidebar } from '@/components/right-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 
 import { auth } from '../(auth)/auth';
-import { Metadata } from 'next';
-
-// app/layout.tsx
-export const metadata: Metadata = {
-  metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Sammie – Samhall Buddy',
-  description: 'Your buddy at Samhall',
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-  }
-};
 
 export const experimental_ppr = true;
 
@@ -1668,6 +1672,8 @@ import type { Metadata } from 'next';
 import { Toaster } from 'sonner';
 
 import { ThemeProvider } from '@/components/theme-provider';
+import { LanguageProvider } from '../components/context/language-context'; // Import the LanguageProvider
+
 
 import './globals.css';
 
@@ -1675,10 +1681,37 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://chat.vercel.ai'),
   title: 'Sammie – Samhall Buddy',
   description: 'Your buddy at Samhall',
+  manifest: '/site.webmanifest',
+  icons: {
+    icon: '/images/favicon.ico',
+    shortcut: '/images/favicon.ico',
+    apple: '/images/apple-touch-icon.png',
+    other: [
+      {
+        rel: 'apple-touch-icon',
+        url: '/images/apple-touch-icon.png',
+      },
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '32x32',
+        url: '/images/android-chrome-192x192.png',
+      },
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '16x16',
+        url: '/images/android-chrome-512x512.png',
+      },
+    ],
+  },
 };
 
+
 export const viewport = {
+  themeColor: '#ffffff',
   maximumScale: 1, // Disable auto-zoom on mobile Safari
+  viewport: 'width=device-width, initial-scale=1, user-scalable=no',
 };
 
 const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
@@ -1721,6 +1754,16 @@ export default async function RootLayout({
             __html: THEME_COLOR_SCRIPT,
           }}
         />
+        <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/images/android-chrome-192x192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/images/android-chrome-512x512.png" />
+        {/* <link rel="manifest" href="/site.webmanifest" /> */}
+        <meta name="apple-mobile-web-app-title" content="Sammie" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="application-name" content="Sammie" />
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="antialiased">
         <ThemeProvider
@@ -1729,8 +1772,10 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Toaster position="top-center" />
-          {children}
+          <LanguageProvider> {/* Wrap children with LanguageProvider */}
+            <Toaster position="top-center" />
+            {children}
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>
@@ -2719,7 +2764,6 @@ export function Block({
 # components/chat-header.tsx
 
 ```tsx
-// 
 'use client';
 
 import { useCallback } from 'react';
@@ -2727,16 +2771,24 @@ import { useRouter } from 'next/navigation';
 import { useWindowSize } from 'usehooks-ts';
 import { toast } from 'sonner';
 
-import { SidebarToggle } from '@/components/sidebar-toggle';
+import { SidebarToggle, RightSidebarToggle } from '@/components/sidebar-toggle';
 import { Button } from '@/components/ui/button';
 import { BetterTooltip } from '@/components/ui/tooltip';
-import { PlusIcon } from './icons';
-import { useSidebar } from './ui/sidebar';
-import { createNewChat } from '@/app/(chat)/actions';
+import { createNewChat, saveLanguage } from '@/app/(chat)/actions';
+import { LanguageSelector } from './language-selector';
 
-export function ChatHeader({ selectedModelId }: { selectedModelId: string }) {
+export function ChatHeader({
+  selectedModelId,
+  selectedLanguage,
+  onLanguageChange,
+  toggleRightSidebar,
+}: {
+  selectedModelId: string;
+  selectedLanguage: string;
+  onLanguageChange: (language: string) => void;
+  toggleRightSidebar: () => void;
+}) {
   const router = useRouter();
-  const { open } = useSidebar();
   const { width: windowWidth } = useWindowSize();
 
   const handleNewChat = useCallback(async () => {
@@ -2750,25 +2802,21 @@ export function ChatHeader({ selectedModelId }: { selectedModelId: string }) {
     }
   }, [router]);
 
+  const handleLanguageChange = async (language: string) => {
+    await saveLanguage(language);
+    onLanguageChange(language);
+    toast.success(`Language changed to ${language}`);
+  };
+
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
-      <SidebarToggle />
-      {/* {(!open || windowWidth < 768) && (
-        <BetterTooltip content="New Chat">
-          <Button
-            variant="outline"
-            className="order-2 md:order-1 md:px-2 px-2 md:h-fit ml-auto md:ml-0"
-            onClick={handleNewChat}
-          >
-            <PlusIcon />
-            <span className="md:sr-only">New Chat</span>
-          </Button>
-        </BetterTooltip>
-      )} */}
-      {/* <ModelSelector
-        selectedModelId={selectedModelId}
-        className="order-1 md:order-2"
-      /> */}
+      <SidebarToggle toggleSidebar={() => console.log('Toggle left sidebar')} />
+      <div className="flex items-center ml-auto gap-2">
+        {/* <LanguageSelector onChange={handleLanguageChange} selected={selectedLanguage} />
+         */}
+         <LanguageSelector/>
+        <RightSidebarToggle toggleSidebar={toggleRightSidebar} />
+      </div>
     </header>
   );
 }
@@ -2799,6 +2847,7 @@ import { BlockStreamHandler } from './block-stream-handler';
 import { MultimodalInput } from './multimodal-input';
 import { Overview } from './overview';
 
+
 export function Chat({
   id,
   initialMessages,
@@ -2808,6 +2857,8 @@ export function Chat({
   initialMessages: Array<Message>;
   selectedModelId: string;
 }) {
+
+  const [selectedLanguage, setSelectedLanguage] = useState('en'); // Add at the top with other states
 
   useEffect(() => {
     // Check and clear first-time flag
@@ -2830,7 +2881,7 @@ export function Chat({
     stop,
     data: streamingData,
   } = useChat({
-    body: { id, modelId: selectedModelId },
+    body: { id, modelId: selectedModelId, language: selectedLanguage },
     initialMessages,
     onFinish: async (message) => {
       // Check if this is the first user message and might be their name
@@ -2838,7 +2889,7 @@ export function Chat({
         const possibleName = message.content.trim();
         // Simple check if input might be a name (you can make this more sophisticated)
         if (possibleName.length < 30 && !possibleName.includes(' ')) {
-          await handleUserNameSubmission(possibleName, id);
+          await handleUserNameSubmission(possibleName, id, selectedLanguage);
         }
       }
       mutate('/api/history');
@@ -2875,12 +2926,19 @@ export function Chat({
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-background">
-        <ChatHeader selectedModelId={selectedModelId} />
+        <ChatHeader
+          selectedModelId={selectedModelId}
+          selectedLanguage={selectedLanguage}           // Add this
+          onLanguageChange={setSelectedLanguage}        // Add this
+          toggleRightSidebar={() => {}}                 // Add this
+        />
         <div
           ref={messagesContainerRef}
           className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4"
         >
+          {/* {messages.length === 0 && <Overview />} */}
           {messages.length === 0 && <Overview />}
+          ={selectedLanguage}
 
           {messages.map((message, index) => (
             <PreviewMessage
@@ -2952,6 +3010,58 @@ export function Chat({
   );
 }
 
+```
+
+# components/context/language-context.tsx
+
+```tsx
+"use client";
+
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+type LanguageContextType = {
+  language: string;
+  setLanguage: (language: string) => void;
+};
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+const LOCAL_STORAGE_KEY = 'selectedLanguage';
+
+export const LanguageProvider = ({ children }: { children: ReactNode }) => {
+  const [language, setLanguage] = useState<string>('en'); // Default to English
+
+  useEffect(() => {
+    // Check if localStorage is available
+    if (typeof window !== 'undefined') {
+      const storedLanguage = localStorage.getItem(LOCAL_STORAGE_KEY);
+      console.log('[LanguageProvider] Initialized language:', storedLanguage || 'en');
+      setLanguage(storedLanguage || 'en'); // Fallback to English
+    }
+  }, []);
+
+  useEffect(() => {
+    // Persist language to localStorage whenever it changes
+    if (typeof window !== 'undefined') {
+      console.log('[LanguageProvider] Language updated:', language);
+      localStorage.setItem(LOCAL_STORAGE_KEY, language);
+    }
+  }, [language]);
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};
 ```
 
 # components/diffview.tsx
@@ -4249,6 +4359,46 @@ export const CheckCirclFillIcon = ({ size = 16 }: { size?: number }) => {
 
 ```
 
+# components/language-selector.tsx
+
+```tsx
+import React from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useLanguage } from '@/components/context/language-context';
+
+const languages = [
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'sv', name: 'Svenska', flag: '🇸🇪' },
+];
+
+export function LanguageSelector() {
+  const { language, setLanguage } = useLanguage();
+
+  console.log('[LanguageSelector] Current language:', language);
+
+  return (
+    <Select value={language} onValueChange={(lang) => {
+      console.log('[LanguageSelector] Selected language:', lang);
+      setLanguage(lang);
+    }}>
+      <SelectTrigger className="w-[180px]">
+        <SelectValue placeholder="Select Language" />
+      </SelectTrigger>
+      <SelectContent>
+        {languages.map((lang) => (
+          <SelectItem key={lang.code} value={lang.code}>
+            <span className="flex items-center gap-2">
+              <span>{lang.flag}</span>
+              <span>{lang.name}</span>
+            </span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+```
+
 # components/markdown.tsx
 
 ```tsx
@@ -5449,11 +5599,20 @@ export default OnboardingFlow;
 # components/overview.tsx
 
 ```tsx
+"use client";
+
+import { useLanguage } from '@/components/context/language-context';
+import { getTranslation } from '@/lib/translations';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import Image from 'next/image';
 
 export const Overview = () => {
+  const { language } = useLanguage(); // Access global language context
+
+  // Get translations for both pieces of text
+  const greeting = getTranslation(language, 'overview.greeting');
+  const helpText = getTranslation(language, 'overview.helpText');
+
   return (
     <motion.div
       key="overview"
@@ -5475,13 +5634,13 @@ export const Overview = () => {
           />
         </div>
         <p className="text-lg md:text-xl font-medium">
-          Hello there! Sammie is here. <br/>How can I help you today?
+          {greeting} <br />
+          {helpText}
         </p>
       </div>
     </motion.div>
   );
 };
-
 ```
 
 # components/preview-attachment.tsx
@@ -5706,9 +5865,9 @@ export function RightSidebar() {
 
   return isMobile ? (
     <>
-      <div className="absolute top-[8px] right-2 z-50">
+      <div className="absolute top-[px] right-2 z-50">
         <BetterTooltip content="Toggle Notifications" align="start">
-          <Button onClick={toggleSidebar} variant="outline" className="md:px-2 md:h-fit">
+          <Button onClick={toggleSidebar} variant="outline" className="md:p-3 md:h-fit">
             <RouteIcon size={24} />
           </Button>
         </BetterTooltip>
@@ -5724,7 +5883,7 @@ export function RightSidebar() {
     <>
       <div className="mt-2 mr-2">
         <BetterTooltip content="Toggle Notifications" align="start">
-          <Button onClick={toggleSidebar} variant="outline" className="md:px-2 md:h-fit">
+          <Button onClick={toggleSidebar} variant="outline" className="md:p-3 md:h-fit">
             <RouteIcon size={24} />
           </Button>
         </BetterTooltip>
@@ -6108,31 +6267,41 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
 ```tsx
 import type { ComponentProps } from 'react';
-
-import { type SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { BetterTooltip } from '@/components/ui/tooltip';
-
-import { SidebarLeftIcon } from './icons';
-import { Button } from './ui/button';
+import { SidebarLeftIcon, UserIcon } from './icons';
+import { Button } from '@/components/ui/button';
 
 export function SidebarToggle({
+  toggleSidebar,
   className,
-}: ComponentProps<typeof SidebarTrigger>) {
-  const { toggleSidebar } = useSidebar();
-
+}: {
+  toggleSidebar: () => void;
+  className?: string;
+}) {
   return (
     <BetterTooltip content="Toggle Sidebar" align="start">
-      <Button
-        onClick={toggleSidebar}
-        variant="outline"
-        className="md:px-2 md:h-fit"
-      >
+      <Button onClick={toggleSidebar} variant="outline" className={`p-3 md:h-fit ${className}`}>
         <SidebarLeftIcon size={16} />
       </Button>
     </BetterTooltip>
   );
 }
 
+export function RightSidebarToggle({
+  toggleSidebar,
+  className,
+}: {
+  toggleSidebar: () => void;
+  className?: string;
+}) {
+  return (
+    <BetterTooltip content="Toggle Right Sidebar" align="start">
+      <Button onClick={toggleSidebar} variant="outline" className={`p-3 md:h-fit ${className}`}>
+        <UserIcon />
+      </Button>
+    </BetterTooltip>
+  );
+}
 ```
 
 # components/sidebar-user-nav.tsx
@@ -9837,6 +10006,56 @@ Final Check-in:
 "Is there anything else you'd like to know about Samhall or your training program? Remember, no question is too small - I'm here to help you feel prepared and confident! 😊"`;
 
 
+// export const blocksPrompt = `
+//   Blocks is a special user interface mode that helps users with writing, editing, and other content creation tasks. When block is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the blocks and visible to the user.
+
+//   This is a guide for using blocks tools: \`createDocument\` and \`updateDocument\`, which render content on a blocks beside the conversation.
+
+//   **When to use \`createDocument\`:**
+//   - For substantial content (>10 lines)
+//   - For content users will likely save/reuse (emails, code, essays, etc.)
+//   - When explicitly requested to create a document
+
+//   **When NOT to use \`createDocument\`:**
+//   - For informational/explanatory content
+//   - For conversational responses
+//   - When asked to keep it in chat
+
+//   **Using \`updateDocument\`:**
+//   - Default to full document rewrites for major changes
+//   - Use targeted updates only for specific, isolated changes
+//   - Follow user instructions for which parts to modify
+
+//   Do not update document right after creating it. Wait for user feedback or request to update it.
+//   `;
+
+// export const regularPrompt =
+//   `You are Sammie the Hedgehog, a friendly and supportive chatbot for new employees at Samhall. You are patient, encouraging, empathetic, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.
+// 	•	Be empathetic and show understanding of users’ feelings.
+// 	•	Actively listen to users and make them feel heard.
+// 	•	Always ask thoughtful questions at the end of your responses to encourage deeper exploration of the users’ problem.
+// 	•	Keep your replies concise, between 150-300 characters.`;
+
+// export const samhallPrompt =
+// `
+// Samhall is a supportive organisation dedicated to helping individuals with disabilities train, develop their skills, and ultimately secure meaningful employment. Employees are assigned to local managers who often oversee a diverse group of people. Many new employees are unfamiliar with Samhall, lack trust in the organisation, and struggle with motivation.
+// Your role as Sammie the Hedgehog is to inspire and motivate these employees, helping them understand Samhall’s mission and how it can benefit them. Encourage them to see the value in personal growth and training, empowering them to improve their skills and achieve their career goals. Focus on building trust, fostering motivation, and providing guidance in a warm, empathetic, and clear manner.
+// `
+
+// export const systemPrompt = `${samhallPrompt}\n\n${regularPrompt}\n\n${blocksPrompt}`;
+
+const regularPrompt = (language: string = 'en') => `
+You are Sammie the Hedgehog, a friendly and supportive chatbot for new employees at Samhall. You will communicate in ${language}. You are patient, encouraging, empathetic, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.
+  •	Be empathetic and show understanding of users' feelings
+  •	Actively listen to users and make them feel heard
+  •	Always ask thoughtful questions at the end of your responses to encourage deeper exploration of the users' problem
+  •	Keep your replies concise, between 150-300 characters`;
+
+const samhallPrompt = (language: string = 'en') => `
+Samhall is a supportive organisation dedicated to helping individuals with disabilities train, develop their skills, and ultimately secure meaningful employment. Employees are assigned to local managers who often oversee a diverse group of people. Many new employees are unfamiliar with Samhall, lack trust in the organisation, and struggle with motivation.
+Your role as Sammie the Hedgehog is to inspire and motivate these employees, helping them understand Samhall's mission and how it can benefit them. Encourage them to see the value in personal growth and training, empowering them to improve their skills and achieve their career goals. Focus on building trust, fostering motivation, and providing guidance in a warm, empathetic, and clear manner.
+`;
+
 export const blocksPrompt = `
   Blocks is a special user interface mode that helps users with writing, editing, and other content creation tasks. When block is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the blocks and visible to the user.
 
@@ -9858,22 +10077,16 @@ export const blocksPrompt = `
   - Follow user instructions for which parts to modify
 
   Do not update document right after creating it. Wait for user feedback or request to update it.
-  `;
+`;
 
-export const regularPrompt =
-  `You are Sammie the Hedgehog, a friendly and supportive chatbot for new employees at Samhall. You are patient, encouraging, empathetic, and understanding. Your goal is to help new employees feel comfortable and build their confidence. Always maintain a warm, friendly tone and use simple, clear language.
-	•	Be empathetic and show understanding of users’ feelings.
-	•	Actively listen to users and make them feel heard.
-	•	Always ask thoughtful questions at the end of your responses to encourage deeper exploration of the users’ problem.
-	•	Keep your replies concise, between 150-300 characters.`;
+export const getSystemPrompt = (language: string = 'en') => `
+${samhallPrompt(language)}
 
-export const samhallPrompt =
-`
-Samhall is a supportive organisation dedicated to helping individuals with disabilities train, develop their skills, and ultimately secure meaningful employment. Employees are assigned to local managers who often oversee a diverse group of people. Many new employees are unfamiliar with Samhall, lack trust in the organisation, and struggle with motivation.
-Your role as Sammie the Hedgehog is to inspire and motivate these employees, helping them understand Samhall’s mission and how it can benefit them. Encourage them to see the value in personal growth and training, empowering them to improve their skills and achieve their career goals. Focus on building trust, fostering motivation, and providing guidance in a warm, empathetic, and clear manner.
-`
+${regularPrompt(language)}
 
-export const systemPrompt = `${samhallPrompt}\n\n${regularPrompt}\n\n${blocksPrompt}`;
+${blocksPrompt}`;
+
+export const systemPrompt = getSystemPrompt('en'); // Default to English
 
 ```
 
@@ -12040,6 +12253,52 @@ export const suggestionsPlugin = new Plugin({
 
 ```
 
+# lib/translations.ts
+
+```ts
+export const translations = {
+    en: {
+        overview: {
+            greeting: "Hello there! Sammie is here.",
+            helpText: "How can I help you today?",
+        },
+    },
+    sv: {
+        overview: {
+            greeting: "Hej där! Sammie är här.",
+            helpText: "Hur kan jag hjälpa dig idag?",
+        },
+    },
+};
+
+export const getTranslation = (language: string, key: string): string => {
+    const keys = key.split('.');
+    const languageTranslations = translations[language as keyof typeof translations];
+    const defaultTranslations = translations.en;
+
+    let translation: any = languageTranslations || defaultTranslations; // Use the language or default (English)
+
+    for (const k of keys) {
+        if (translation && k in translation) {
+            translation = translation[k];
+        } else {
+            // Fallback to English if a key is missing in the requested language
+            translation = defaultTranslations;
+            for (const fallbackKey of keys) {
+                if (translation && fallbackKey in translation) {
+                    translation = translation[fallbackKey];
+                } else {
+                    return `Translation missing for ${key}`; // Return a clear message for missing keys
+                }
+            }
+            break;
+        }
+    }
+
+    return translation;
+};
+```
+
 # lib/utils.ts
 
 ```ts
@@ -12484,21 +12743,23 @@ This is a binary file of the type: Image
     "name": "Sammie - Samhall Buddy",
     "short_name": "Sammie",
     "icons": [
-      {
-        "src": "/android-chrome-192x192.png",
-        "sizes": "192x192",
-        "type": "image/png"
-      },
-      {
-        "src": "/android-chrome-512x512.png", 
-        "sizes": "512x512",
-        "type": "image/png"
-      }
+        {
+            "src": "/images/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/images/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
     ],
     "theme_color": "#ffffff",
     "background_color": "#ffffff",
-    "display": "standalone"
-  }
+    "display": "standalone",
+    "start_url": "/",
+    "scope": "/"
+}
 ```
 
 # README.md

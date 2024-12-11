@@ -1,24 +1,39 @@
+'use client';
+
 import type { ComponentProps } from 'react';
-
-import { type SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { BetterTooltip } from '@/components/ui/tooltip';
-
-import { SidebarLeftIcon } from './icons';
-import { Button } from './ui/button';
+import { RouteIcon, SidebarLeftIcon } from './icons';
+import { Button } from '@/components/ui/button';
+import { useRightSidebar } from './context/right-sidebar-context';
+import { useSidebar } from './ui/sidebar';
 
 export function SidebarToggle({
   className,
-}: ComponentProps<typeof SidebarTrigger>) {
-  const { toggleSidebar } = useSidebar();
+}: {
+  className?: string;
+}) {
+  const { toggleSidebar: toggleLeftSidebar } = useSidebar();
 
   return (
     <BetterTooltip content="Toggle Sidebar" align="start">
-      <Button
-        onClick={toggleSidebar}
-        variant="outline"
-        className="md:px-2 md:h-fit"
-      >
+      <Button onClick={toggleLeftSidebar} variant="outline" className={`p-3 md:h-fit ${className}`}>
         <SidebarLeftIcon size={16} />
+      </Button>
+    </BetterTooltip>
+  );
+}
+
+export function RightSidebarToggle({
+  className,
+}: {
+  className?: string;
+}) {
+  const { toggleSidebar: toggleRightSidebar } = useRightSidebar();
+  
+  return (
+    <BetterTooltip content="Toggle Notifications" align="start">
+      <Button onClick={toggleRightSidebar} variant="outline" className={`p-3 md:h-fit ${className}`}>
+        <RouteIcon size={24} />
       </Button>
     </BetterTooltip>
   );

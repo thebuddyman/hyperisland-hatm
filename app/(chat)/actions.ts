@@ -32,6 +32,14 @@ export async function generateTitleFromUserMessage({
   return title;
 }
 
+export async function saveLanguage(language: string) {
+  const cookieStore = await cookies();
+  cookieStore.set('selected-language', language, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+  });
+}
+
 export async function createFirstTimeChat({ userId }: { userId: string }) {
   const id = generateUUID();
   const title = "Welcome to Sammie!";
@@ -116,7 +124,7 @@ export async function useTool() {
   return id;
 }
 
-export async function handleUserNameSubmission(name: string, chatId: string) {
+export async function handleUserNameSubmission(name: string, chatId: string, language: string = 'en') {
   const { text: responseMessage } = await generateText({
     model: customModel('gpt-4o-mini'),
     system: welcomePrompt,

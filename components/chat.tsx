@@ -20,6 +20,7 @@ import { BlockStreamHandler } from './block-stream-handler';
 import { MultimodalInput } from './multimodal-input';
 import { Overview } from './overview';
 
+
 export function Chat({
   id,
   initialMessages,
@@ -29,6 +30,8 @@ export function Chat({
   initialMessages: Array<Message>;
   selectedModelId: string;
 }) {
+
+  const [selectedLanguage, setSelectedLanguage] = useState('en'); // Add at the top with other states
 
   useEffect(() => {
     // Check and clear first-time flag
@@ -51,7 +54,7 @@ export function Chat({
     stop,
     data: streamingData,
   } = useChat({
-    body: { id, modelId: selectedModelId },
+    body: { id, modelId: selectedModelId, language: selectedLanguage },
     initialMessages,
     onFinish: async (message) => {
       // Check if this is the first user message and might be their name
@@ -59,7 +62,7 @@ export function Chat({
         const possibleName = message.content.trim();
         // Simple check if input might be a name (you can make this more sophisticated)
         if (possibleName.length < 30 && !possibleName.includes(' ')) {
-          await handleUserNameSubmission(possibleName, id);
+          await handleUserNameSubmission(possibleName, id, selectedLanguage);
         }
       }
       mutate('/api/history');
@@ -96,11 +99,16 @@ export function Chat({
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-background">
-        <ChatHeader selectedModelId={selectedModelId} />
+        <ChatHeader
+          selectedModelId={selectedModelId}
+          selectedLanguage={selectedLanguage}           // Add this
+          onLanguageChange={setSelectedLanguage}        // Add this
+        />
         <div
           ref={messagesContainerRef}
           className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4"
         >
+          {/* {messages.length === 0 && <Overview />} */}
           {messages.length === 0 && <Overview />}
 
           {messages.map((message, index) => (

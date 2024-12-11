@@ -10,7 +10,8 @@ import { z } from 'zod';
 import { auth } from '@/app/(auth)/auth';
 import { customModel } from '@/lib/ai';
 import { models } from '@/lib/ai/models';
-import { systemPrompt } from '@/lib/ai/prompts';
+// import { systemPrompt } from '@/lib/ai/prompts';
+import { getSystemPrompt } from '@/lib/ai/prompts';
 import {
   deleteChatById,
   getChatById,
@@ -52,7 +53,8 @@ export async function POST(request: Request) {
     id,
     messages,
     modelId,
-  }: { id: string; messages: Array<Message>; modelId: string } =
+    language = 'en'  // Add language with English default
+  }: { id: string; messages: Array<Message>; modelId: string; language?: string;  } =
     await request.json();
 
   const session = await auth();
@@ -91,7 +93,8 @@ export async function POST(request: Request) {
 
   const result = await streamText({
     model: customModel(model.apiIdentifier),
-    system: systemPrompt,
+    // system: systemPrompt,
+    system: getSystemPrompt(language), // Pass the selected language
     messages: coreMessages,
     maxSteps: 5,
     experimental_activeTools: allTools,

@@ -1,9 +1,8 @@
 import { cookies } from 'next/headers';
 import { AppSidebar } from '@/components/app-sidebar';
 import { RightSidebar } from '@/components/right-sidebar';
-// import { Sidebar } from '@/components/multimodal-input';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-
+import { RightSidebarProvider } from '@/components/context/right-sidebar-context';
 import { auth } from '../(auth)/auth';
 
 export const experimental_ppr = true;
@@ -18,10 +17,11 @@ export default async function Layout({
 
   return (
     <SidebarProvider defaultOpen={!isCollapsed}>
-      <AppSidebar user={session?.user} />
-      <SidebarInset>{children}</SidebarInset>
-      <RightSidebar />
-      {/* <Sidebar/> */}
+      <RightSidebarProvider>
+        <AppSidebar user={session?.user} />
+        <SidebarInset>{children}</SidebarInset>
+        <RightSidebar />
+      </RightSidebarProvider>
     </SidebarProvider>
   );
 }

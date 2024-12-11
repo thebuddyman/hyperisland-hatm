@@ -1,8 +1,17 @@
+"use client";
+
+import { useLanguage } from '@/components/context/language-context';
+import { getTranslation } from '@/lib/translations';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import Image from 'next/image';
 
 export const Overview = () => {
+  const { language } = useLanguage(); // Access global language context
+
+  // Get translations for both pieces of text
+  const greeting = getTranslation(language, 'overview.greeting');
+  const helpText = getTranslation(language, 'overview.helpText');
+
   return (
     <motion.div
       key="overview"
@@ -24,7 +33,8 @@ export const Overview = () => {
           />
         </div>
         <p className="text-lg md:text-xl font-medium">
-          Hello there! Sammie is here. <br/>How can I help you today?
+          {greeting} <br />
+          {helpText}
         </p>
       </div>
     </motion.div>
