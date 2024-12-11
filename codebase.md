@@ -481,18 +481,12 @@ export default function Page() {
 
   useEffect(() => {
     if (state.status === 'success') {
-
-       // Set the first-time user flag in localStorage
-       localStorage.setItem('sammie-first-time', 'true');
-
+      // Set the first-time user flag in localStorage
+      localStorage.setItem('sammie-first-time', 'true');
       toast.success('Account created successfully');
       setIsSuccessful(true);
-      // Redirect to the welcome chat if chatId is available
-      if ('chatId' in state && state.chatId) {
-        router.push(`/chat/${state.chatId}`);
-      } else {
-        router.push('/');
-      }
+      // Redirect to onboarding page
+      router.push('/onboarding');
     } else if (state.status === 'user_exists') {
       toast.error('Account already exists');
     } else if (state.status === 'failed') {
@@ -621,6 +615,35 @@ export async function createNewChat() {
       chatId: id,
       role: 'assistant',
       content: "Hi! How can I help you today!?",
+      createdAt: new Date()
+    }]
+  });
+
+  return id;
+}
+
+export async function useTool() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('User not authenticated');
+  }
+
+  const id = generateUUID();
+  const title = "New Tool Usage";
+
+  await saveChat({ 
+    id, 
+    userId: session.user.id, 
+    title 
+  });
+
+  // Simple, consistent greeting for regular new chats
+  await saveMessages({
+    messages: [{
+      id: generateUUID(),
+      chatId: id,
+      role: 'assistant',
+      content: "test use tool!?",
       createdAt: new Date()
     }]
   });
@@ -1702,6 +1725,45 @@ export default async function RootLayout({
   );
 }
 
+```
+
+# app/onboarding/page.tsx
+
+```tsx
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import OnboardingFlow from '@/components/onboarding-flow';
+
+export default function OnboardingPage() {
+  const router = useRouter();
+  const [shouldShow, setShouldShow] = useState(false);
+
+  useEffect(() => {
+    // Check if user should see onboarding
+    const isFirstTime = localStorage.getItem('sammie-first-time');
+    if (isFirstTime === 'true') {
+      setShouldShow(true);
+    } else {
+      // If not a first-time user, redirect to chat
+      router.push('/');
+    }
+  }, [router]);
+
+  if (!shouldShow) {
+    return null;
+  }
+
+  return (
+    <OnboardingFlow
+      onComplete={() => {
+        localStorage.removeItem('sammie-first-time');
+        router.push('/');
+      }}
+    />
+  );
+}
 ```
 
 # biome.jsonc
@@ -3386,6 +3448,12 @@ export const VercelIcon = ({ size = 17 }) => {
   );
 };
 
+// export const BellIcon = ({ size = 24 }: { size: number }) => {
+//   return (
+   
+//   );
+// };
+
 export const GitIcon = () => {
   return (
     <svg
@@ -4779,6 +4847,8 @@ import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons';
 import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
+import { SuggestedActionsWithModal } from '@/components/suggested-actions-modal';
+
 
 const suggestedActions = [
   {
@@ -4960,7 +5030,7 @@ export function MultimodalInput({
 
   return (
     <div className="relative w-full flex flex-col gap-4">
-      {messages.length === 0 &&
+      {/* {messages.length === 0 &&
         attachments.length === 0 &&
         uploadQueue.length === 0 && (
           <div className="grid sm:grid-cols-2 gap-2 w-full">
@@ -4993,6 +5063,12 @@ export function MultimodalInput({
               </motion.div>
             ))}
           </div>
+        )} */}
+
+      {messages.length === 0 &&
+        attachments.length === 0 &&
+        uploadQueue.length === 0 && (
+          <SuggestedActionsWithModal chatId={chatId} append={append} />
         )}
 
       <input
@@ -5072,7 +5148,7 @@ export function MultimodalInput({
         </Button>
       )}
 
-      <Button
+      {/* <Button
         className="rounded-full p-1.5 h-fit absolute bottom-2 right-11 m-0.5 dark:border-zinc-700"
         onClick={(event) => {
           event.preventDefault();
@@ -5082,11 +5158,233 @@ export function MultimodalInput({
         disabled={isLoading}
       >
         <PaperclipIcon size={14} />
-      </Button>
+      </Button> */}
     </div>
   );
 }
 
+```
+
+# components/onboarding-flow.tsx
+
+```tsx
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+
+const optionsConfig = [
+  { id: 'orientation', label: 'Orientation', icon: '🎯' },
+  { id: 'tasks', label: 'Job Tasks', icon: '📋' },
+  { id: 'resources', label: 'Finding Resources', icon: '📚' },
+  { id: 'communication', label: 'Communication', icon: '💬' }
+];
+
+interface OnboardingStepProps {
+  title: string;
+  message: React.ReactNode;
+  ctaText: string;
+  onNext: () => void;
+  showOptions?: boolean;
+  currentStep: number;
+  totalSteps: number;
+  selectedOptions: string[];
+  onOptionSelect?: (optionId: string) => void;
+  isNextEnabled?: boolean;
+}
+
+const OnboardingStep = ({
+  title,
+  message,
+  ctaText,
+  onNext,
+  showOptions = false,
+  currentStep,
+  totalSteps,
+  selectedOptions,
+  onOptionSelect,
+  isNextEnabled = true
+}: OnboardingStepProps) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -20 }}
+    transition={{ duration: 0.3 }}
+    className="flex flex-col items-center justify-center max-w-xl mx-auto text-center p-8"
+  >
+    <div className="mb-8">
+      <Image
+        src="/images/mascot.png"
+        width={120}
+        height={120}
+        alt="Sammie the Hedgehog"
+        className="rounded-full"
+        priority
+      />
+    </div>
+
+    <h2 className="text-2xl font-bold mb-4 text-foreground">{title}</h2>
+    
+    <div className="mb-8 text-lg text-foreground/80">
+      {message}
+      
+      {showOptions && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          {optionsConfig.map((option) => (
+            <Button
+              key={option.id}
+              variant={selectedOptions.includes(option.id) ? "default" : "outline"}
+              className="p-4 h-auto flex flex-col gap-2 items-center justify-center text-lg relative"
+              onClick={() => onOptionSelect?.(option.id)}
+            >
+              <span className="text-2xl">{option.icon}</span>
+              {option.label}
+              {selectedOptions.includes(option.id) && (
+                <motion.span 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute top-2 right-2 text-sm rounded-full size-5 flex items-center justify-center"
+                >
+                  ✓
+                </motion.span>
+              )}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+
+    <div className="space-y-4 w-full max-w-sm">
+      <Button 
+        onClick={onNext}
+        className="w-full py-6 text-lg"
+        size="lg"
+        disabled={!isNextEnabled}
+      >
+        {ctaText}
+      </Button>
+      
+      <div className="flex gap-2 justify-center mt-6">
+        {Array.from({ length: totalSteps }).map((_, idx) => (
+          <div
+            key={idx}
+            className={`size-2 rounded-full transition-colors ${
+              idx === currentStep ? 'bg-primary' : 'bg-muted'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  </motion.div>
+);
+
+interface OnboardingFlowProps {
+  onComplete: () => void;
+}
+
+const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
+  const [step, setStep] = useState(0);
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+
+  const handleOptionSelect = (optionId: string) => {
+    setSelectedOptions(prev => 
+      prev.includes(optionId)
+        ? prev.filter(id => id !== optionId)
+        : [...prev, optionId]
+    );
+  };
+
+  const steps = [
+    {
+      title: "Welcome to Samhall! 👋",
+      message: "Hi there! I&apos;m Sammie, your personal guide at Samhall. I&apos;m here to help with anything you need!",
+      ctaText: "Get started →",
+    },
+    {
+      title: "You&apos;re Not Alone 🤗",
+      message: "I know starting something new can feel like a lot, but don&apos;t worry—you&apos;re not alone. I&apos;m here to guide you every step of the way.",
+      ctaText: "That&apos;s wonderful →",
+    },
+    {
+      title: "How I Can Help You 💪",
+      message: (
+        <div className="space-y-4">
+          <p>Here&apos;s how I can help:</p>
+          <ul className="list-none text-left space-y-3">
+            <li className="flex items-center gap-2">
+              <span className="text-primary">✓</span> Answer your questions quickly
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-primary">✓</span> Show you where to find resources
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-primary">✓</span> Help you with tasks and processes
+            </li>
+          </ul>
+        </div>
+      ),
+      ctaText: "Awesome →",
+    },
+    {
+      title: "Let&apos;s Personalize Your Experience 🎯",
+      message: "What would you like help with? (Select all that apply)",
+      ctaText: "Continue →",
+      showOptions: true,
+      isNextEnabled: selectedOptions.length > 0,
+    },
+    {
+      title: "All Set! 🎉",
+      message: (
+        <div className="space-y-4">
+          <p>
+            Thank you for letting me know! I&apos;m here whenever you need help with:
+          </p>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {selectedOptions.map((optionId) => {
+              const option = optionsConfig.find(opt => opt.id === optionId);
+              return option && (
+                <span 
+                  key={optionId} 
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary"
+                >
+                  {option.icon} {option.label}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      ),
+      ctaText: "Start chatting →",
+    },
+  ];
+
+  const handleNext = () => {
+    if (step < steps.length - 1) {
+      setStep(step + 1);
+    } else {
+      onComplete();
+    }
+  };
+
+  return (
+    <div className="min-h-[80vh] bg-background flex items-center justify-center p-4">
+      <AnimatePresence mode="wait">
+        <OnboardingStep
+          key={step}
+          {...steps[step]}
+          onNext={handleNext}
+          currentStep={step}
+          totalSteps={steps.length}
+          selectedOptions={selectedOptions}
+          onOptionSelect={handleOptionSelect}
+          isNextEnabled={!steps[step].showOptions || selectedOptions.length > 0}
+        />
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default OnboardingFlow;
 ```
 
 # components/overview.tsx
@@ -5184,7 +5482,7 @@ export const PreviewAttachment = ({
 import { useEffect, useState } from 'react';
 import { BetterTooltip } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { SidebarLeftIcon } from './icons';
+import { RouteIcon } from './icons';
 import { cn, generateUUID } from '@/lib/utils';
 import { Sheet, SheetContent } from './ui/sheet';
 import { useRouter } from 'next/navigation';
@@ -5253,6 +5551,8 @@ export function RightSidebar() {
 
       // Navigate to chat page
       router.replace(`/chat/${chatId}`);
+      router.refresh(); // Add this line to refresh the page
+
     } catch (error) {
       console.error('Error appending message:', error);
       // Add toast notification for user feedback if needed
@@ -5288,8 +5588,8 @@ export function RightSidebar() {
 
   const sidebarContent = (
     <div className="space-y-4 h-full">
-      <span className="text-lg font-semibold">Toolbox</span>
-      {toolboxActions.map((action, index) => (
+      <span className="text-lg font-semibold">Notifications</span>
+      {/* {toolboxActions.map((action, index) => (
         <motion.div
           key={index}
           initial={{ opacity: 0, y: 20 }}
@@ -5297,18 +5597,37 @@ export function RightSidebar() {
           exit={{ opacity: 0, y: 20 }}
           transition={{ delay: 0.05 * index }}
         >
-          <div
-            onClick={() => append({ role: 'user', content: action.action })}
-            className="p-4 rounded-lg bg-white dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+          <Button
+            variant="ghost"
+            onClick={async () => {
+              // Create new chat and get chatId
+              // const chatId = await createNewChat();
+
+              // Replace the URL without navigation
+              // window.history.replaceState({}, '', `/chat/${chatId}`);
+
+              // Optionally close the sidebar for mobile
+              // Close the sidebar regardless of device type
+              setIsOpen(false);
+
+              // Navigate to the chat page
+              // router.replace(`/chat/${chatId}`);
+
+              // Append user message
+              append({
+                role: 'user',
+                content: action.action,
+              });
+
+
+            }}
+            className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
           >
-            <div className="flex items-center gap-2 mb-2">
-              <div>{action.icon}</div>
-              <h3 className="font-medium">{action.title}</h3>
-            </div>
-            <p className="text-zinc-500 dark:text-zinc-400">{action.label}</p>
-          </div>
+            <span className="font-medium">{action.title}</span>
+            <span className="text-muted-foreground">{action.label}</span>
+          </Button>
         </motion.div>
-      ))}
+      ))} */}
     </div>
   );
 
@@ -5317,9 +5636,9 @@ export function RightSidebar() {
   return isMobile ? (
     <>
       <div className="top-[10px] right-4 z-50">
-        <BetterTooltip content="Toggle Right Sidebar" align="start">
+        <BetterTooltip content="Toggle Notifications" align="start">
           <Button onClick={toggleSidebar} variant="outline" className="md:px-2 md:h-fit">
-            <SidebarLeftIcon size={16} />
+            <RouteIcon size={24} />
           </Button>
         </BetterTooltip>
       </div>
@@ -5333,16 +5652,16 @@ export function RightSidebar() {
   ) : (
     <>
       <div className="mt-2 mr-2">
-        <BetterTooltip content="Toggle Right Sidebar" align="start">
+        <BetterTooltip content="Toggle Notifications" align="start">
           <Button onClick={toggleSidebar} variant="outline" className="md:px-2 md:h-fit">
-            <SidebarLeftIcon size={16} />
+            <RouteIcon size={24} />
           </Button>
         </BetterTooltip>
       </div>
-      <div className={cn('relative h-svh w-[384px] transition-[width] duration-200 ease-linear', !isOpen && 'w-0')} />
+      <div className={cn('relative h-svh w-[256px] transition-[width] duration-200 ease-linear', !isOpen && 'w-0')} />
       <div
         className={cn(
-          'fixed right-0 top-0 z-30 h-svh w-96 bg-sidebar px-5 py-3 transition-transform duration-200 ease-linear border-l',
+          'fixed right-0 top-0 z-30 h-svh w-64 bg-sidebar px-5 py-3 transition-transform duration-200 ease-linear',
           !isOpen && 'translate-x-full',
         )}
       >
@@ -5894,6 +6213,159 @@ export function SubmitButton({
   );
 }
 
+```
+
+# components/suggested-actions-modal.tsx
+
+```tsx
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from "@/components/ui/sheet";
+
+const extendedSuggestedActions = [
+    {
+        title: '🎯 Practice Work Scenarios',
+        label: 'Let\'s practice common work situations together',
+        action: 'I\'d like to practice some common work scenarios I might encounter at Samhall',
+    },
+    {
+        title: '🏢 About Samhall',
+        label: 'Learn about Samhall\'s mission and values',
+        action: 'Can you tell me about Samhall\'s mission, values, and what makes it special?',
+    },
+    {
+        title: '📋 My Training Program',
+        label: 'Understand your role and daily routines',
+        action: 'Can you explain my training program, what I\'ll be doing day-to-day, and how I\'ll develop my skills?',
+    },
+    {
+        title: '🤝 Support & Resources',
+        label: 'Learn about available help and support',
+        action: 'What kind of support and resources are available to me as a Samhall employee?',
+    },
+    // Extended actions
+    {
+        title: '🗣️ Communication Skills',
+        label: 'Practice effective workplace communication',
+        action: 'Help me improve my workplace communication skills',
+    },
+    {
+        title: '⚡ Workplace Safety',
+        label: 'Learn about safety protocols and procedures',
+        action: 'What are the important safety guidelines I need to follow at Samhall?',
+    },
+    {
+        title: '📅 Time Management',
+        label: 'Tips for managing work schedules',
+        action: 'Can you help me with strategies for managing my work schedule effectively?',
+    },
+    {
+        title: '🤔 Problem Solving',
+        label: 'Practice handling workplace challenges',
+        action: 'Let\'s practice solving common workplace problems I might encounter',
+    },
+    {
+        title: '🌟 Career Growth',
+        label: 'Explore development opportunities',
+        action: 'What career development opportunities are available at Samhall?',
+    },
+    {
+        title: '👥 Teamwork',
+        label: 'Learn about working with colleagues',
+        action: 'How can I be a good team member at Samhall?',
+    }
+];
+
+export function SuggestedActionsWithModal({
+    chatId,
+    append
+}: {
+    chatId: string;
+    append: (message: any) => Promise<any>;
+}) {
+    const initialVisibleCount = 2;
+    const [isOpen, setIsOpen] = useState(false);
+
+    const ActionButton = ({ action, index }: { action: typeof extendedSuggestedActions[0], index: number }) => (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ delay: 0.05 * index }}
+        >
+            <Button
+                variant="ghost"
+                onClick={async () => {
+                    window.history.replaceState({}, '', `/chat/${chatId}`);
+                    setIsOpen(false);  // Close sheet after selection
+                    append({
+                        role: 'user',
+                        content: action.action,
+                    });
+                }}
+                className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 flex-col w-full h-auto justify-start items-start"
+            >
+                <span className="font-medium">{action.title}</span>
+                <span className="text-muted-foreground">
+                    {action.label}
+                </span>
+            </Button>
+        </motion.div>
+    );
+
+    return (
+        <div className="grid gap-2 w-full">
+            {/* Initial visible actions */}
+            <div className="grid sm:grid-cols-2 gap-2">
+                {extendedSuggestedActions.slice(0, initialVisibleCount).map((action, index) => (
+                    <ActionButton
+                        key={`initial-${action.title}`}
+                        action={action}
+                        index={index}
+                    />
+                ))}
+            </div>
+
+            {/* See More Button with Sheet */}
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild>
+                    <Button
+                        variant="outline"
+                        className="w-full mt-2"
+                    >
+                        See more options
+                    </Button>
+                </SheetTrigger>
+                <SheetContent
+                    side="bottom"
+                    className="h-[100dvh] p-0 flex flex-col" // Use dvh for better mobile support
+                >
+                    <SheetHeader className="px-4 py-3 border-b">
+                        <SheetTitle className="text-left">More ways Sammie can help</SheetTitle>
+                    </SheetHeader>
+                    <div className="flex-1 overflow-y-auto">
+                        <div className="grid sm:grid-cols-2 gap-2 p-4">
+                            {extendedSuggestedActions.map((action, index) => (
+                                <ActionButton
+                                    key={`modal-${action.title}`}
+                                    action={action}
+                                    index={index}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </SheetContent>
+            </Sheet>
+        </div>
+    );
+}
 ```
 
 # components/suggestion.tsx
@@ -11608,9 +12080,9 @@ This is a binary file of the type: Binary
 
 This is a binary file of the type: Binary
 
-# public/images/demo-thumbnail.png
+# public/images/favicon.ico
 
-This is a binary file of the type: Image
+This is a binary file of the type: Binary
 
 # public/images/mascot.png
 

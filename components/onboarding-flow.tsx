@@ -127,13 +127,13 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   const steps = [
     {
       title: "Welcome to Samhall! 👋",
-      message: "Hi there! I&apos;m Sammie, your personal guide at Samhall. I&apos;m here to help with anything you need!",
+      message: "Hi there! I'm Sammie, your personal guide at Samhall. I'm here to help with anything you need!",
       ctaText: "Get started →",
     },
     {
-      title: "You&apos;re Not Alone 🤗",
-      message: "I know starting something new can feel like a lot, but don&apos;t worry—you&apos;re not alone. I&apos;m here to guide you every step of the way.",
-      ctaText: "That&apos;s wonderful →",
+      title: "You're Not Alone 🤗",
+      message: "I know starting something new can feel like a lot, but don't worry—you're not alone. I'm here to guide you every step of the way.",
+      ctaText: "That's wonderful →",
     },
     {
       title: "How I Can Help You 💪",
@@ -156,7 +156,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       ctaText: "Awesome →",
     },
     {
-      title: "Let&apos;s Personalize Your Experience 🎯",
+      title: "Let's Personalize Your Experience 🎯",
       message: "What would you like help with? (Select all that apply)",
       ctaText: "Continue →",
       showOptions: true,
