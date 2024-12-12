@@ -22,12 +22,12 @@ export const Overview = () => {
       transition={{ delay: 0.5 }}
     >
       <div className="rounded-full p-6 flex flex-col items-center justify-center gap-8 leading-relaxed text-center max-w-xl mx-auto">
-        <div className="w-[120px] md:w-[120px] aspect-square flex items-center justify-center">
+        <div className="w-[300px] md:w-[300px] aspect-square flex items-center justify-center">
           <Image
             className="rounded-full w-full h-full object-cover"
-            src="/images/mascot.png"
-            width={120}
-            height={120}
+            src="/images/mascot2.png"
+            width={240}
+            height={240}
             alt="Mascot - Sammie"
             priority
           />
