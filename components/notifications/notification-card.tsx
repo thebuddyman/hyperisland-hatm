@@ -47,7 +47,7 @@ export default function NotificationCard({ notification }: { notification: Notif
 
     return (
         <div
-            className={`p-4 mb-2 rounded-lg border cursor-pointer transition-all hover:shadow-md ${status === 'unread' ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-zinc-800'
+            className={`p-4 mb-2 rounded-lg border cursor-pointer transition-all hover:bg-[#EFEDEB] ${status === 'unread' ? 'bg-[#E5E3E1] dark:bg-blue-900/20' : 'bg-white dark:bg-zinc-800'
                 }`}
             onClick={handleNotificationClick}
         >
