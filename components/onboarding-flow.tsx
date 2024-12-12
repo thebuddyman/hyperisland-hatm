@@ -54,10 +54,10 @@ const OnboardingStep = ({
     </div>
 
     <h2 className="text-2xl font-bold mb-4 text-foreground">{title}</h2>
-    
+
     <div className="mb-8 text-lg text-foreground/80">
       {message}
-      
+
       {showOptions && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
           {optionsConfig.map((option) => (
@@ -70,7 +70,7 @@ const OnboardingStep = ({
               <span className="text-2xl">{option.icon}</span>
               {option.label}
               {selectedOptions.includes(option.id) && (
-                <motion.span 
+                <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   className="absolute top-2 right-2 text-sm rounded-full size-5 flex items-center justify-center"
@@ -82,10 +82,19 @@ const OnboardingStep = ({
           ))}
         </div>
       )}
+      <div className="flex gap-2 justify-center mt-6">
+        {Array.from({ length: totalSteps }).map((_, idx) => (
+          <div
+            key={idx}
+            className={`size-2 rounded-full transition-colors ${idx === currentStep ? 'bg-primary' : 'bg-muted'
+              }`}
+          />
+        ))}
+      </div>
     </div>
 
     <div className="space-y-4 w-full max-w-sm">
-      <Button 
+      <Button
         onClick={onNext}
         className="w-full py-6 text-lg"
         size="lg"
@@ -93,17 +102,6 @@ const OnboardingStep = ({
       >
         {ctaText}
       </Button>
-      
-      <div className="flex gap-2 justify-center mt-6">
-        {Array.from({ length: totalSteps }).map((_, idx) => (
-          <div
-            key={idx}
-            className={`size-2 rounded-full transition-colors ${
-              idx === currentStep ? 'bg-primary' : 'bg-muted'
-            }`}
-          />
-        ))}
-      </div>
     </div>
   </motion.div>
 );
@@ -117,7 +115,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
 
   const handleOptionSelect = (optionId: string) => {
-    setSelectedOptions(prev => 
+    setSelectedOptions(prev =>
       prev.includes(optionId)
         ? prev.filter(id => id !== optionId)
         : [...prev, optionId]
@@ -173,8 +171,8 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
             {selectedOptions.map((optionId) => {
               const option = optionsConfig.find(opt => opt.id === optionId);
               return option && (
-                <span 
-                  key={optionId} 
+                <span
+                  key={optionId}
                   className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary"
                 >
                   {option.icon} {option.label}
